@@ -29,7 +29,6 @@ delays_list = list()
 cells = dict()
 
 tmp_delay_list = list()
-tmp_equation = list()
 tmp_constr_list = list()
 
 
@@ -205,7 +204,6 @@ def p_timing_cond(p):
     port['cond_equation'] = " ".join(p[3])
     port['port'] = p[4]['port']
     port['port_edge'] = p[4]['port_edge']
-    tmp_equation[:] = []
     p[0] = port
 
 
@@ -357,6 +355,7 @@ def p_increment_delay_list(p):
 def p_cond_delay(p):
     '''cond_delay : LPAR COND delay_condition delay_list RPAR'''
     # add condition to every list element
+    print("## " + str(p[3]));
     for d in p[4]:
         d['is_cond'] = True
         d['cond_equation'] = " ".join(p[3])
@@ -365,30 +364,21 @@ def p_cond_delay(p):
 
 def p_delay_condition(p):
     '''delay_condition : LPAR equation RPAR'''
-    p[0] = list(p[2])
-    tmp_equation[:] = []
+    p[0] = p[2]
 
 
 def p_delay_condition_nopar(p):
     '''delay_condition : equation'''
-    p[0] = list(p[1])
-    tmp_equation[:] = []
+    p[0] = p[1]
 
 
 def p_delay_list_interconnect(p):
     '''delay_list : del
                   | delay_list del'''
     if len(p) == 2:
-        to_add = p[1]
+        p[0] = p[1]
     else:
-        to_add = p[2]
-
-    if type(to_add) is list:
-        tmp_delay_list.extend(to_add)
-    else:
-        tmp_delay_list.append(to_add)
-
-    p[0] = tmp_delay_list
+        p[0] = p[1] + p[2]
 
 
 def p_del(p):
@@ -397,7 +387,10 @@ def p_del(p):
            | port
            | device
            | cond_delay'''
-    p[0] = p[1]
+    if type(p[1]) is list:
+        p[0] = p[1]
+    else:
+        p[0] = [p[1]]
 
 
 def p_delval_list(p):
@@ -570,11 +563,9 @@ def p_equation(p):
                 | equation SCALARCONSTANT
                 | equation STRING'''
     if len(p) == 2:
-        tmp_equation.append(p[1])
+        p[0] = [p[1]]
     else:
-        tmp_equation.append(p[2])
-
-    p[0] = tmp_equation
+        p[0] = p[1] + [p[2]]
 
 
 def p_operator(p):
