@@ -56,29 +56,6 @@ def parse(input):
     return sdfyacc.parser.parse(sdflex.input_data)
 
 
-slice_cell ='''
-(CELL
- (CELLTYPE "BIGCHIP")
- (INSTANCE top)
- (DELAY
-  (ABSOLUTE
-   (INTERCONNECT mck b/c/clk (.6:.7:.9))
-   (INTERCONNECT d[0] b/c/d (.4:.5:.6))
-  )
- )
-)
-'''
-
-slice_sdffile = '''
-(DELAYFILE
-(SDFVERSION "3.0")
-(TIMESCALE 100 ps)
-)
-'''
-
-slice_interconnect ='''
-(INTERCONNECT mck b/c/clk (.6:.7:.9))
-'''
 
 class TestSyntaxElements(unittest.TestCase):
 
@@ -200,6 +177,12 @@ class TestSyntaxElements(unittest.TestCase):
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
 
+    def test_rvalue_triple_none(self):
+        data ='(::)'
+        reconfigure(startsym='real_triple', errorlog=self.null_logger);
+        with self.assertRaises(Exception):
+            sdf = parse(data);
+
     def test_rvalue_triple_missing_lpar(self):
         data ='1:2:3)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
@@ -293,10 +276,245 @@ class TestSyntaxElements(unittest.TestCase):
         with self.assertRaises(Exception):
             sdf = parse(data);
 
+    #-------------------------------------
+    # conditional port expression
+    #-------------------------------------
 
-        ##import json
-        ##print( json.dumps( sdf, indent=2) );
+    def test_cond_path_expr_const_1(self):
+        data ='1\'b0'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['1\'b0'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_2(self):
+        data ='1\'b1'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['1\'b1'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_3(self):
+        data ='1\'B0'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['1\'B0'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_4(self):
+        data ='1\'B1'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['1\'B1'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_5(self):
+        data ='\'b0'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['\'b0'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_6(self):
+        data ='\'b1'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['\'b1'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_7(self):
+        data ='\'B0'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['\'B0'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_8(self):
+        data ='\'B1'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['\'B1'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_9(self):
+        data ='0'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['0'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_const_10(self):
+        data ='1'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['1'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_port_1(self):
+        data ='a'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['a'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_port_2(self):
+        data ='a/b/c'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['a/b/c'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_port_3(self):
+        data ='a.b.c'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['a.b.c'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_unary_const_1(self):
+        data ='~1\'b0'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['~', '1\'b0'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_unary_port_1(self):
+        data ='~a/b/c'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['~', 'a/b/c'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_unary_port_2(self):
+        data ='!x'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['!', 'x'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_binary_1(self):
+        data ='a & b'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['a','&','b'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_binary_2(self):
+        data ='a && 1\'b1'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['a','&&','1\'b1'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_binary_3(self):
+        data ='1\'b0 | b'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['1\'b0','|','b'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_binary_4(self):
+        data ='x || y'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['x','||','y'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_binary_5(self):
+        data ='c.d ^ a/b'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['c.d','^','a/b'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_binary_6(self):
+        data ='A==0'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['A','==','0'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_binary_7(self):
+        data ='A!=C'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['A','!=','C'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_parenthesis_1(self):
+        data ='(A)'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['(','A',')'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_parenthesis_2(self):
+        data ='(1\'b1 && A)'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['(','1\'b1','&&','A',')'];
+        self.assertEqual( act, exp );
+
+    def test_cond_path_expr_parenthesis_3(self):
+        data ='(A&(B|C))'
+        reconfigure(startsym='delay_condition', errorlog=self.null_logger);
+        act = parse(data);
+        exp = ['(','A','&','(','B','|','C',')',')'];
+        self.assertEqual( act, exp );
+
+    #-------------------------------------
+    # conditional path delay
+    #-------------------------------------
+    # [1] Open Verilog Internationa, Standard Delay Format Specification v3.0, May 1995
+    #
+    # From spec [1]:
+    #
+    #   The `COND` keyword allows the specification of conditional (state-
+    #   dependent) input-to-output path delays.
+    #
+    #   Syntax
+    #
+    #       ( COND QSTRING? conditional_port_expr
+    #           ( IOPATH port_spec port_instance delval_list ) )
+    #
+
+    def test_cond_iopath_simple_1(self):
+        data ='(COND b (IOPATH a y () ()))'
+        reconfigure(startsym='cond_delay', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath', 'is_cond': True, 'cond_equation': 'b'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! `sdf` is a list of paths
+        self.assertEqual( act, exp );
+
+    def test_cond_iopath_simple_2(self):
+        data ='(COND x & ~y (IOPATH a y () ()))'
+        reconfigure(startsym='cond_delay', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath', 'is_cond': True, 'cond_equation': 'x & ~ y'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! `sdf` is a list of paths
+        self.assertEqual( act, exp );
+
         
+    #-------------------------------------
+    # delay list
+    #-------------------------------------
+
+    def test_delay_list_1(self):
+        data ='''
+        (COND b & a (IOPATH a y () ()))
+        (COND a | b (IOPATH a y () ()))
+        '''
+        reconfigure(startsym='delay_list', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = [
+                {'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath', 'is_cond': True, 'cond_equation': 'b & a'},
+                {'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath', 'is_cond': True, 'cond_equation': 'a | b'}
+                ];
+        act = [];
+        for i in range(0,len(exp)):
+            act.append( {k: sdf[i][k] for k in exp[i].keys()} );
+        self.assertEqual( act, exp );
+
 
 if __name__ == '__main__':
     unittest.main()
