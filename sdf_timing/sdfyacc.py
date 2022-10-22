@@ -355,20 +355,17 @@ def p_increment_delay_list(p):
 def p_cond_delay(p):
     '''cond_delay : LPAR COND delay_condition delay_list RPAR'''
     # add condition to every list element
-    print("## " + str(p[3]));
     for d in p[4]:
         d['is_cond'] = True
         d['cond_equation'] = " ".join(p[3])
     p[0] = p[4]
 
 
+#TODO `delay_condition` can be reduced to `cond_expr` and hence we can
+#     optimize the grammar. `delay_condition` has been kept for compatibility
+#     so that syntax unit tests work with the legacy code, too.
 def p_delay_condition(p):
-    '''delay_condition : LPAR equation RPAR'''
-    p[0] = p[2]
-
-
-def p_delay_condition_nopar(p):
-    '''delay_condition : equation'''
+    '''delay_condition : cond_expr'''
     p[0] = p[1]
 
 
@@ -568,8 +565,88 @@ def p_equation(p):
         p[0] = p[1] + [p[2]]
 
 
+def p_cond_expr(p):
+    '''cond_expr : cond_expr_term
+                 | cond_expr binary_op cond_expr_term'''
+    if len(p)==2:
+        p[0] = p[1];
+    else:
+        p[0] = p[1] + [p[2]] + p[3];
+
+
+def p_binary_op(p):
+    '''binary_op : TIMES
+                 | SLASH
+                 | MODULO
+                 | PLUS
+                 | MINUS
+                 | LOGIC_AND
+                 | BIT_AND
+                 | NAND
+                 | LOGIC_OR
+                 | BIT_OR
+                 | NOR
+                 | XOR
+                 | XNOR
+                 | EQUAL
+                 | NEQUAL
+                 | CASEEQUAL
+                 | CASENEQUAL
+                 | LEFTSHIFT
+                 | RIGHTSHIFT
+                 | GT
+                 | LT
+                 | GTE
+                 | LTE'''
+    p[0] = p[1]
+
+
+def p_cond_expr_term(p):
+    '''cond_expr_term : simple_term
+                      |          LPAR cond_expr RPAR
+                      | unary_op LPAR cond_expr RPAR'''
+    if len(p)==2:
+        p[0] = p[1];
+    elif len(p)==4:
+        p[0] = [p[1]] + p[2] + [p[3]];
+    else:
+        p[0] = [p[1],p[2]] + p[3] + [p[4]];
+
+
+# As per definition, a scalar constant can be one of bit specs (e.g. `1'b1`, `'b1`)
+# or one of logical ints (i.e. `0` and `1`). However, the latter cannot be part of
+# the `SCALARCONSTANT` token (as it would conflict with the `FLOAT` token). Hence
+# we allow a `FLOAT` token in `simple_term` despite it would allow syntax invalid
+# per SDF Std. To fix that, there would need to be a semantical check (which we do
+# not do at the moment).
+def p_simple_term(p):
+    '''simple_term :          SCALARCONSTANT
+                   | unary_op SCALARCONSTANT
+                   |          STRING
+                   | unary_op STRING
+                   |          FLOAT
+                   | unary_op FLOAT'''
+    p[0] = list(p[1:]);
+
+
+def p_unary_op(p):
+    '''unary_op : PLUS
+                | MINUS
+                | LOGIC_NOT
+                | BIT_NOT
+                | BIT_AND
+                | NAND
+                | BIT_OR
+                | NOR
+                | XOR
+                | XNOR'''
+    p[0] = p[1]
+
+
 def p_operator(p):
-    '''operator : ARITHMETIC
+    '''operator : PLUS
+                | MINUS
+                | TIMES
                 | SLASH
                 | MODULO
                 | LOGIC_NOT

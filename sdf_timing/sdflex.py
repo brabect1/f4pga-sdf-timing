@@ -59,7 +59,9 @@ reserved = {
 }
 
 operators = (
-    'ARITHMETIC',
+    'PLUS',
+    'MINUS',
+    'TIMES',
     'MODULO',
     'LOGIC_NOT',
     'BIT_NOT',
@@ -97,7 +99,9 @@ tokens = (
     'STRING',
 ) + tuple(reserved.values()) + operators
 
-t_ARITHMETIC = r'[\+\-\*]'
+t_PLUS = r'\+'
+t_MINUS = r'\-'
+t_TIMES = r'\*'
 t_MODULO = r'%'
 t_LOGIC_NOT = r'!'
 t_BIT_NOT = r'~'
@@ -132,7 +136,7 @@ t_ignore = ' \t'
 
 # define FLOAT&SCALARCONSTANT as function so they take precendence over STRING
 def t_SCALARCONSTANT(t):
-    r"[01]?'[Bb][01]"
+    r"[1]?'[Bb][01]"
     return t
 
 
