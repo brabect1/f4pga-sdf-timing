@@ -494,7 +494,7 @@ class TestSyntaxElements(unittest.TestCase):
         act = {k: sdf[0][k] for k in exp.keys()}; # !!! `sdf` is a list of paths
         self.assertEqual( act, exp );
 
-        
+
     #-------------------------------------
     # delay list
     #-------------------------------------
@@ -514,6 +514,121 @@ class TestSyntaxElements(unittest.TestCase):
         for i in range(0,len(exp)):
             act.append( {k: sdf[i][k] for k in exp[i].keys()} );
         self.assertEqual( act, exp );
+
+
+    #-------------------------------------
+    # width check
+    #-------------------------------------
+
+    def test_tcheck_width_simple(self):
+        data ='''(WIDTH clk (4.4:7.5:11.3))''';
+        reconfigure(startsym='width_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'width', 'is_timing_check': True, 'is_cond': False,
+                'from_pin_edge': None, 'to_pin_edge': None};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+    def test_tcheck_width_port_negedge_spec(self):
+        data ='''(WIDTH (negedge clk) (4.4:7.5:11.3))''';
+        reconfigure(startsym='width_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'width', 'is_timing_check': True, 'is_cond': False,
+                'from_pin_edge': 'negedge', 'to_pin_edge': 'negedge'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+    def test_tcheck_width_port_posedge_spec(self):
+        data ='''(WIDTH (posedge path/to/rst) (11))''';
+        reconfigure(startsym='width_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'path/to/rst', 'to_pin': 'path/to/rst', 'type': 'width', 'is_timing_check': True,
+                'is_cond': False, 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+    def test_tcheck_width_conditional(self):
+        data ='''(WIDTH (COND ENABLE (posedge CP)) (1:1:1) )''';
+        reconfigure(startsym='width_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'CP', 'to_pin': 'CP', 'type': 'width', 'is_timing_check': True, 'is_cond': True,
+                'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge', 'cond_equation': 'ENABLE'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+
+    #-------------------------------------
+    # period check
+    #-------------------------------------
+
+    def test_tcheck_period_simple(self):
+        data ='''(PERIOD clk (1::2))''';
+        reconfigure(startsym='period_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'period', 'is_timing_check': True, 'is_cond': False,
+                'from_pin_edge': None, 'to_pin_edge': None};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+    def test_tcheck_period_conditional(self):
+        data ='''(PERIOD (COND a/b==1'b0 && !c (negedge clk)) (1))''';
+        reconfigure(startsym='period_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'period', 'is_timing_check': True, 'is_cond': True,
+                'from_pin_edge': 'negedge', 'to_pin_edge': 'negedge', 'cond_equation': 'a/b == 1\'b0 && ! c'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+    def test_tcheck_period_port_posedge_spec(self):
+        data ='''(PERIOD (posedge path/to/CK) ())''';
+        reconfigure(startsym='period_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'path/to/CK', 'to_pin': 'path/to/CK', 'type': 'period', 'is_timing_check': True,
+                'is_cond': False, 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+
+    #-------------------------------------
+    # nochange check
+    #-------------------------------------
+
+    def test_tcheck_nochange_simple(self):
+        data ='''(NOCHANGE wr addr (:1:) (:2:))''';
+        reconfigure(startsym='nochange_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'addr', 'to_pin': 'wr', 'type': 'nochange', 'is_timing_check': True, 'is_cond': False,
+                'from_pin_edge': None, 'to_pin_edge': None};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+    def test_tcheck_nochange_conditional_1st(self):
+        data ='''(NOCHANGE (COND 1'b0 por) (posedge rst) (1) (2))''';
+        reconfigure(startsym='nochange_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'rst', 'to_pin': 'por', 'type': 'nochange', 'is_timing_check': True, 'is_cond': True,
+                'from_pin_edge': 'posedge', 'to_pin_edge': None, 'cond_equation': '1\'b0'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
+
+    def test_tcheck_nochange_conditional_2nd(self):
+        data ='''(NOCHANGE (negedge por) (COND a/b&c (posedge rst)) (1) (2))''';
+        reconfigure(startsym='nochange_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'rst', 'to_pin': 'por', 'type': 'nochange', 'is_timing_check': True, 'is_cond': True,
+                'from_pin_edge': 'posedge', 'to_pin_edge': 'negedge', 'cond_equation': 'a/b & c'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        self.assertEqual( act, exp );
+        #TODO compare delay object
 
 
 if __name__ == '__main__':

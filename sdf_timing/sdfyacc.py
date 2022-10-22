@@ -223,6 +223,8 @@ def p_t_check(p):
                | hold_check
                | setup_check
                | width_check
+               | period_check
+               | nochange_check
                | setuphold_check'''
     p[0] = p[1]
 
@@ -274,6 +276,27 @@ def p_width_check(p):
     paths = dict()
     paths['nominal'] = p[4]
     tcheck = utils.add_tcheck('width', p[3], p[3], paths)
+    tmp_delay_list.append(tcheck)
+    p[0] = tmp_delay_list
+
+
+def p_period_check(p):
+    '''period_check : LPAR PERIOD timing_port real_triple RPAR'''
+
+    paths = dict()
+    paths['nominal'] = p[4]
+    tcheck = utils.add_tcheck('period', p[3], p[3], paths)
+    tmp_delay_list.append(tcheck)
+    p[0] = tmp_delay_list
+
+
+def p_nochange_check(p):
+    '''nochange_check : LPAR NOCHANGE timing_port timing_port real_triple real_triple RPAR'''
+
+    paths = dict()
+    paths['setup'] = p[5]
+    paths['hold'] = p[6]
+    tcheck = utils.add_tcheck('nochange', p[3], p[4], paths)
     tmp_delay_list.append(tcheck)
     p[0] = tmp_delay_list
 

@@ -54,6 +54,8 @@ reserved = {
     'PORT': 'PORT',
     'SETUPHOLD': 'SETUPHOLD',
     'WIDTH': 'WIDTH',
+    'PERIOD': 'PERIOD',
+    'NOCHANGE': 'NOCHANGE',
     'COND': 'COND',
     'DEVICE': 'DEVICE',
 }
