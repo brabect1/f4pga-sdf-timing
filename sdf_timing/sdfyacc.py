@@ -93,13 +93,13 @@ def p_qfloat_header_entry(p):
 
 
 def p_sdf_voltage(p):
-    '''voltage : LPAR VOLTAGE real_triple RPAR'''
+    '''voltage : LPAR VOLTAGE real_triple_no_par RPAR'''
     header['voltage'] = p[3]
     p[0] = header
 
 
 def p_sdf_temperature(p):
-    '''temperature : LPAR TEMPERATURE real_triple RPAR'''
+    '''temperature : LPAR TEMPERATURE real_triple_no_par RPAR'''
     header['temperature'] = p[3]
     p[0] = header
 
@@ -459,14 +459,17 @@ def p_port_condition(p):
     p[0] = p[1]
 
 
+# TODO This really is `rtriple` (as SDF Std. calls it). Keeping the legacy
+#      code naming for easier diffing.
 def p_real_triple_no_par(p):
-    '''real_triple : FLOAT COLON FLOAT COLON FLOAT
+    '''real_triple_no_par : FLOAT COLON FLOAT COLON FLOAT
                    | COLON FLOAT COLON FLOAT
                    | FLOAT COLON COLON FLOAT
                    | FLOAT COLON FLOAT COLON
                    | COLON COLON FLOAT
                    | COLON FLOAT COLON
-                   | FLOAT COLON COLON'''
+                   | FLOAT COLON COLON
+                   | FLOAT'''
 
     delays_triple = dict()
     if len(p) == 6:
@@ -496,6 +499,9 @@ def p_real_triple_no_par(p):
         delays_triple['avg'] = float(p[2]) if p[2] != ':' else None
         delays_triple['max'] = float(p[3]) if p[3] != ':' else None
 
+    elif len(p) == 2:
+        delays_triple = dict.fromkeys(['min','avg','max'],float(p[1]));
+
     else:
         delays_triple['min'] = None
         delays_triple['avg'] = None
@@ -504,50 +510,17 @@ def p_real_triple_no_par(p):
     p[0] = delays_triple
 
 
+#TODO This really is `rvalue` (as SDF Std. calls it). Keeping the legacy
+#     code naming for compatibility of syntax unit tests.
 def p_real_triple(p):
-    '''real_triple : LPAR FLOAT COLON FLOAT COLON FLOAT RPAR
-                   | LPAR COLON FLOAT COLON FLOAT RPAR
-                   | LPAR FLOAT COLON COLON FLOAT RPAR
-                   | LPAR FLOAT COLON FLOAT COLON RPAR
-                   | LPAR COLON COLON FLOAT RPAR
-                   | LPAR COLON FLOAT COLON RPAR
-                   | LPAR FLOAT COLON COLON RPAR
+    '''real_triple : LPAR real_triple_no_par RPAR
                    | LPAR RPAR'''
 
     delays_triple = dict()
-    if len(p) == 8:
-        delays_triple['min'] = float(p[2])
-        delays_triple['avg'] = float(p[4])
-        delays_triple['max'] = float(p[6])
-
-    elif len(p) == 7:
-
-        if p[2] == ':' and p[4] == ':':
-            delays_triple['min'] = None
-            delays_triple['avg'] = float(p[3])
-            delays_triple['max'] = float(p[5])
-
-        elif p[3] == ':' and p[4] == ':':
-            delays_triple['min'] = float(p[2])
-            delays_triple['avg'] = None
-            delays_triple['max'] = float(p[5])
-
-        elif p[3] == ':' and p[5] == ':':
-            delays_triple['min'] = float(p[2])
-            delays_triple['avg'] = float(p[4])
-            delays_triple['max'] = None
-
-    elif len(p) == 6:
-        delays_triple['min'] = float(p[2]) if p[2] != ':' else None
-        delays_triple['avg'] = float(p[3]) if p[3] != ':' else None
-        delays_triple['max'] = float(p[4]) if p[4] != ':' else None
-
+    if len(p) == 3:
+        p[0] = {'min': None, 'avg': None, 'max': None};
     else:
-        delays_triple['min'] = None
-        delays_triple['avg'] = None
-        delays_triple['max'] = None
-
-    p[0] = delays_triple
+        p[0] = p[2];
 
 
 def p_equation(p):
