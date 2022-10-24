@@ -28,7 +28,7 @@ header = dict()
 delays_list = list()
 cells = dict()
 
-tmp_delay_list = list()
+#TODO:remove tmp_delay_list = list()
 tmp_constr_list = list()
 
 
@@ -146,20 +146,29 @@ def p_timing_cell(p):
             | LPAR CELL celltype instance RPAR'''
 
     add_cell(p[3], p[4])
-    add_delays_to_cell(p[3], p[4], delays_list)
+    #TODO:remove add_delays_to_cell(p[3], p[4], delays_list)
+    delays = [];
+    if len(p)==7:
+        delays = p[5];
+    add_delays_to_cell(p[3], p[4], delays)
     p[0] = cells
-    delays_list[:] = []
+    #TODO:remove delays_list[:] = []
 
 
 def p_timing_cell_lst(p):
     '''timing_cell_lst : timing_cell_entry
                        | timing_cell_lst timing_cell_entry'''
+    if len(p)==2:
+        p[0] = p[1];
+    else:
+        p[0] = p[1] + p[2];
 
 
 def p_timing_cell_entry(p):
     '''timing_cell_entry : timing_check
                          | delay
                          | timingenv'''
+    p[0] = p[1];
 
 
 def p_celltype(p):
@@ -179,6 +188,8 @@ def p_instance(p):
 
 def p_timing_check(p):
     '''timing_check : LPAR TIMINGCHECK timing_check_list RPAR'''
+    p[0] = p[3];
+    #TODO:remove delays_list.extend( p[3] );
 
 
 def p_timing_port(p):
@@ -211,10 +222,10 @@ def p_timing_check_list(p):
     '''timing_check_list : t_check
                          | timing_check_list t_check'''
     if len(p) == 2:
-        delays_list.extend(list(p[1]))
+        p[0] = p[1];
     else:
-        delays_list.extend(list(p[2]))
-    tmp_delay_list[:] = []
+        p[0] = p[1] + p[2];
+    #TODO:remove tmp_delay_list[:] = []
 
 
 def p_t_check(p):
@@ -235,8 +246,9 @@ def p_removal_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('removal', p[3], p[4], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_recovery_check(p):
@@ -246,8 +258,9 @@ def p_recovery_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('recovery', p[3], p[4], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_hold_check(p):
@@ -256,8 +269,9 @@ def p_hold_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('hold', p[3], p[4], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_setup_check(p):
@@ -266,8 +280,9 @@ def p_setup_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('setup', p[3], p[4], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_width_check(p):
@@ -276,8 +291,9 @@ def p_width_check(p):
     paths = dict()
     paths['nominal'] = p[4]
     tcheck = utils.add_tcheck('width', p[3], p[3], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_period_check(p):
@@ -286,8 +302,9 @@ def p_period_check(p):
     paths = dict()
     paths['nominal'] = p[4]
     tcheck = utils.add_tcheck('period', p[3], p[3], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_nochange_check(p):
@@ -297,8 +314,9 @@ def p_nochange_check(p):
     paths['setup'] = p[5]
     paths['hold'] = p[6]
     tcheck = utils.add_tcheck('nochange', p[3], p[4], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_setuphold_check(p):
@@ -309,12 +327,14 @@ def p_setuphold_check(p):
     paths['setup'] = p[5]
     paths['hold'] = p[6]
     tcheck = utils.add_tcheck('setuphold', p[3], p[4], paths)
-    tmp_delay_list.append(tcheck)
-    p[0] = tmp_delay_list
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
 
 
 def p_timingenv(p):
     'timingenv : LPAR TIMINGENV constraints_list RPAR'
+    p[0] = p[3];
 
 
 def p_constraints_list(p):
@@ -342,28 +362,39 @@ def p_path_constraint(p):
 def p_delay(p):
     '''delay : LPAR DELAY absolute_list RPAR
              | LPAR DELAY increment_list RPAR'''
+    p[0] = p[3];
 
 
 def p_absolute_list(p):
     '''absolute_list : absolute
                      | absolute_list absolute'''
+    if len(p)==2:
+        p[0] = p[1];
+    else:
+        p[0] = p[1] + p[2];
 
 
 def p_absolute_empty(p):
     '''absolute : LPAR ABSOLUTE RPAR'''
+    p[0] = []
 
 
 def p_absolute_delay_list(p):
     '''absolute : LPAR ABSOLUTE delay_list RPAR'''
     for d in p[3]:
         d['is_absolute'] = True
-    delays_list.extend(list(p[3]))
-    tmp_delay_list[:] = []
+    #TODO:remove delays_list.extend(list(p[3]))
+    #TODO:remove tmp_delay_list[:] = []
+    p[0] = p[3]
 
 
 def p_increment_list(p):
     '''increment_list : increment
                       | increment_list increment'''
+    if len(p)==2:
+        p[0] = p[1];
+    else:
+        p[0] = p[1] + p[2];
 
 
 def p_increment_delay_list(p):
@@ -371,8 +402,9 @@ def p_increment_delay_list(p):
 
     for d in p[3]:
         d['is_incremental'] = True
-    delays_list.extend(list(p[3]))
-    tmp_delay_list[:] = []
+    #TODO:remove delays_list.extend(list(p[3]))
+    #TODO:remove tmp_delay_list[:] = []
+    p[0] = p[3]
 
 
 def p_cond_delay(p):

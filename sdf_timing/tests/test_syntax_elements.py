@@ -631,6 +631,93 @@ class TestSyntaxElements(unittest.TestCase):
         #TODO compare delay object
 
 
+    #-------------------------------------
+    # timingcheck
+    #-------------------------------------
+
+    def test_timingcheck_1(self):
+        data ='''
+        (TIMINGCHECK
+        (SETUPHOLD d (posedge clk) (3:4:5) (-1:-1:-1))
+        (WIDTH clk (4.4:7.5:11.3))
+        )
+        '''
+        reconfigure(startsym='timing_check', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = [
+                {'from_pin': 'clk', 'to_pin': 'd', 'type': 'setuphold', 'is_cond': False, 'cond_equation': None},
+                {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'width', 'is_cond': False, 'cond_equation': None}
+                ];
+        act = [];
+        self.assertEqual( len(sdf), len(exp) );
+        for i in range(0,len(exp)):
+            act.append( {k: sdf[i][k] for k in exp[i].keys()} );
+        self.assertEqual( act, exp );
+
+
+    #-------------------------------------
+    # delay
+    #-------------------------------------
+
+    def test_delay_absolute_empty(self):
+        data ='''(DELAY (ABSOLUTE))'''
+        reconfigure(startsym='delay', errorlog=self.null_logger);
+        sdf = parse(data);
+        self.assertEqual( sdf, [] );
+
+    def test_delay_absolute_1(self):
+        data ='''
+        (DELAY
+        (ABSOLUTE
+        (IOPATH a y (1.5:2.5:3.4) (2.5:3.6:4.7))
+        (IOPATH b y (1.4:2.3:3.2) (2.3:3.4:4.3))
+        )
+        )
+        '''
+        reconfigure(startsym='delay', errorlog=self.null_logger);
+        sdf = parse(data);
+        #TODO tapping internal data structure that holds the parsed data
+        #     (this is poor programming practice and should change)
+        ## import json;
+        ## print( json.dumps( sdf, indent=2 ) );
+        #sdf = sdfyacc.delays_list;
+        #exp = [
+        #        {'from_pin': 'clk', 'to_pin': 'd', 'type': 'setuphold', 'is_cond': False, 'cond_equation': None},
+        #        {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'width', 'is_cond': False, 'cond_equation': None}
+        #        ];
+        #act = [];
+        #self.assertEqual( len(sdf), len(exp) );
+        #for i in range(0,len(exp)):
+        #    act.append( {k: sdf[i][k] for k in exp[i].keys()} );
+        #self.assertEqual( act, exp );
+        self.fail("not complete"); #TODO finish the test case
+
+
+    #-------------------------------------
+    # cell
+    #-------------------------------------
+
+    def test_cell_1(self):
+        data ='''
+        (CELL
+            (CELLTYPE "AND2")
+            (INSTANCE top/b/d)
+            (DELAY
+                (ABSOLUTE
+                    (IOPATH a y (1.5:2.5:3.4)(2.5:3.6:4.7))
+                    (IOPATH b y (1.4:2.3:3.2)(2.3:3.4:4.3))
+                )
+            )
+        )
+        '''
+        reconfigure(startsym='cell', errorlog=self.null_logger);
+        sdf = parse(data);
+        self.fail("not complete"); #TODO finish the test case
+
+        #TODO import json;
+        #TODO print( json.dumps( sdf, indent=2 ) );
+
+
 if __name__ == '__main__':
     unittest.main()
 
