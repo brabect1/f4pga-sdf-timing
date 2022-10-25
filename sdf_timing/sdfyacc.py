@@ -127,7 +127,25 @@ def add_delays_to_cell(celltype, instance, delays):
 
     if delays is None:
         return
+
+    occurrences = {};
     for delay in delays:
+        delay_name = delay['name'];
+        if not delay_name in occurrences:
+            occurrences[delay_name] = 1;
+        else:
+            #TODO Not sure what the delay name is eventually used for
+            #     (other than for indexing). It may be better to use
+            #     other postfix than `_#`, which may cause other
+            #     collisions.
+            suffix = "_" + str(occurrences[delay_name]);
+
+            delay_name += suffix;
+            while delay_name in occurrences:
+                delay_name += suffix;
+            occurrences[delay_name] = 1;
+            occurrences[delay['name']] += 1;
+            delay['name'] = delay_name;
         cells[celltype][instance][delay['name']] = delay
 
 

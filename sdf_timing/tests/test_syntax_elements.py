@@ -736,8 +736,46 @@ class TestSyntaxElements(unittest.TestCase):
             act.update( {i: {k: sdf[i][k] for k in exp[i].keys()}} );
         self.assertEqual( act, exp );
 
-        ##TODO import json;
-        ##TODO print( json.dumps( sdf, indent=2 ) );
+    # This test case exercises that there will be no aliasing
+    # in keys of delays and timing constraints if they represent
+    # a timing arc with same from-to pair of pins.
+    def test_cell_timing_uniquification(self):
+        data ='''
+        (CELL
+            (CELLTYPE "AND2")
+            (INSTANCE top.b.d)
+            (DELAY
+                (ABSOLUTE
+                    (IOPATH a y (1:2:3)(1:2:3))
+                    (COND en (IOPATH a y (4:5:6)(4:5:6)))
+                )
+            )
+        )
+        '''
+        reconfigure(startsym='cell', errorlog=self.null_logger);
+        sdf = parse(data);
+        self.assertTrue('AND2' in sdf);
+
+        sdf = sdf['AND2'];
+        self.assertTrue('top.b.d' in sdf);
+
+        sdf = sdf['top.b.d'];
+        exp = {
+                "iopath_a_y": {
+                    'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
+                    'is_cond': False, 'cond_equation': None
+                    },
+                "iopath_a_y_1": {
+                    'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
+                    'is_cond': True, 'cond_equation': 'en'
+                    }
+                };
+        self.assertEqual( sdf.keys(), exp.keys() );
+        act = {};
+        for i in exp.keys():
+            act.update( {i: {k: sdf[i][k] for k in exp[i].keys()}} );
+        self.assertEqual( act, exp );
+
 
 
 if __name__ == '__main__':
