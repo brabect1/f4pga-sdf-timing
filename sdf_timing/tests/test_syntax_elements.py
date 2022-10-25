@@ -494,6 +494,14 @@ class TestSyntaxElements(unittest.TestCase):
         act = {k: sdf[0][k] for k in exp.keys()}; # !!! `sdf` is a list of paths
         self.assertEqual( act, exp );
 
+    def test_cond_iopath_six_vals(self):
+        data = '''(COND PA==1'b0&&PB==1'b1&&PS==1'b1 (IOPATH EN PADM () () (0.661::0.682) (3.513::11.574) (0.945::0.964) (3.176::10.900)))'''
+        reconfigure(startsym='cond_delay', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'EN', 'to_pin': 'PADM', 'type': 'iopath', 'is_cond': True, 'cond_equation': 'PA == 1\'b0 && PB == 1\'b1 && PS == 1\'b1'};
+        act = {k: sdf[0][k] for k in exp.keys()}; # !!! `sdf` is a list of paths
+        self.assertEqual( act, exp );
+
 
     #-------------------------------------
     # delay list
@@ -676,21 +684,15 @@ class TestSyntaxElements(unittest.TestCase):
         '''
         reconfigure(startsym='delay', errorlog=self.null_logger);
         sdf = parse(data);
-        #TODO tapping internal data structure that holds the parsed data
-        #     (this is poor programming practice and should change)
-        ## import json;
-        ## print( json.dumps( sdf, indent=2 ) );
-        #sdf = sdfyacc.delays_list;
-        #exp = [
-        #        {'from_pin': 'clk', 'to_pin': 'd', 'type': 'setuphold', 'is_cond': False, 'cond_equation': None},
-        #        {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'width', 'is_cond': False, 'cond_equation': None}
-        #        ];
-        #act = [];
-        #self.assertEqual( len(sdf), len(exp) );
-        #for i in range(0,len(exp)):
-        #    act.append( {k: sdf[i][k] for k in exp[i].keys()} );
-        #self.assertEqual( act, exp );
-        self.fail("not complete"); #TODO finish the test case
+        exp = [
+                {'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath', 'is_cond': False, 'cond_equation': None},
+                {'from_pin': 'b', 'to_pin': 'y', 'type': 'iopath', 'is_cond': False, 'cond_equation': None}
+                ];
+        act = [];
+        self.assertEqual( len(sdf), len(exp) );
+        for i in range(0,len(exp)):
+            act.append( {k: sdf[i][k] for k in exp[i].keys()} );
+        self.assertEqual( act, exp );
 
 
     #-------------------------------------
@@ -712,10 +714,30 @@ class TestSyntaxElements(unittest.TestCase):
         '''
         reconfigure(startsym='cell', errorlog=self.null_logger);
         sdf = parse(data);
-        self.fail("not complete"); #TODO finish the test case
+        self.assertTrue('AND2' in sdf);
 
-        #TODO import json;
-        #TODO print( json.dumps( sdf, indent=2 ) );
+        sdf = sdf['AND2'];
+        self.assertTrue('top/b/d' in sdf);
+
+        sdf = sdf['top/b/d'];
+        exp = {
+                "iopath_a_y": {
+                    'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
+                    'is_cond': False, 'cond_equation': None
+                    },
+                "iopath_b_y": {
+                    'from_pin': 'b', 'to_pin': 'y', 'type': 'iopath',
+                    'is_cond': False, 'cond_equation': None
+                    }
+                };
+        self.assertEqual( sdf.keys(), exp.keys() );
+        act = {};
+        for i in exp.keys():
+            act.update( {i: {k: sdf[i][k] for k in exp[i].keys()}} );
+        self.assertEqual( act, exp );
+
+        ##TODO import json;
+        ##TODO print( json.dumps( sdf, indent=2 ) );
 
 
 if __name__ == '__main__':

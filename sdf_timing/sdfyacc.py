@@ -236,7 +236,8 @@ def p_t_check(p):
                | width_check
                | period_check
                | nochange_check
-               | setuphold_check'''
+               | setuphold_check
+               | recrem_check'''
     p[0] = p[1]
 
 
@@ -332,6 +333,19 @@ def p_setuphold_check(p):
     p[0] = [tcheck]; #TODO change from list to scalar
 
 
+def p_recrem_check(p):
+    '''recrem_check : LPAR RECREM timing_port timing_port real_triple \
+    real_triple RPAR'''
+
+    paths = dict()
+    paths['recovery'] = p[5]
+    paths['removal'] = p[6]
+    tcheck = utils.add_tcheck('recrem', p[3], p[4], paths)
+    #TODO:remove tmp_delay_list.append(tcheck)
+    #TODO:remove p[0] = tmp_delay_list
+    p[0] = [tcheck]; #TODO change from list to scalar
+
+
 def p_timingenv(p):
     'timingenv : LPAR TIMINGENV constraints_list RPAR'
     p[0] = p[3];
@@ -407,6 +421,7 @@ def p_increment_delay_list(p):
     p[0] = p[3]
 
 
+#TODO there shall be `iopath` instead of `delval_list` in the rule
 def p_cond_delay(p):
     '''cond_delay : LPAR COND delay_condition delay_list RPAR'''
     # add condition to every list element
@@ -446,25 +461,114 @@ def p_del(p):
 
 
 def p_delval_list(p):
-    '''delval_list : real_triple
-                   | real_triple real_triple
-                   | real_triple real_triple real_triple'''
+    '''delval_list : real_triple_list'''
 
-    # SDF can express separate timings from transitions between different
-    # logic state sets. For now we do not have use for eg. different 0->1
-    # and 1->0 delays. Therefore parsing of a delval list is limited to
-    # one, two or three real triples.
+    # The number of delvals in the delval_list can be one, two, three, six or
+    # twelve. Note, however, that the amount of data you include in a delay
+    # definition entry must be consistent with the analysis tool’s ability to
+    # model that kind of delay. For example, if the modeling primitives of
+    # a particular tool can accept only three delay values, perhaps rising,
+    # falling and Z transitions, you should not attempt to annotate different
+    # values for 0-to-1 and Z-to-1 transitions or for 1-to-Z and 0-to-Z
+    # transitions. It is recommended that in such situations annotators
+    # combine the information given in some documented manner and issue
+    # a warning.
+    # 
+    # The following rules apply for annotation:
+    # 
+    # - If twelve delvals are specified in delval_list, then each corresponds,
+    #   in sequence, to the delay value applicable when the port (for `IOPATH`
+    #   and `INTERCONNECT`, the output port) makes the following transitions:
+    # 
+    #       0-to-1, 1-to-0, 0-to-Z, Z-to-1, 1-to-Z, Z-to-0,
+    #       0-to-X, X-to-1, 1-to-X, X-to-0, X-to-Z, Z-to-X
+    # 
+    #   If fewer than twelve delvals are specified in delval_list, then the
+    #   table below shows how the delays for each transition of the port are
+    #   found from the values given.
+    # 
+    # - If only two delvals are specified, the first (rising) is denoted in the
+    #   table by 0-to-1 and the second (falling) by 1-to-0.
+    # 
+    # - If three delvals are specified, the first and second are denoted as
+    #   before and the third, the Z transition value, by to−Z.
+    # 
+    # - If six delvals are specified, they are denoted, in sequence, by 0-to-1,
+    #   1-to-0, 0-to-Z, Z-to-1, 1-to-Z and Z-to-0.
+    # 
+    # - If a single delval is specified, it applies to all twelve possible
+    #   transitions. This is not shown in the table.
+    # 
+    # +------------+--------------------------------------------------------------+
+    # |            | Number of delvals in delval_list                             |
+    # +------------+--------------------------------------------------------------+
+    # | Transition | 2                  | 3                  | 6                  |
+    # +------------+--------------------+--------------------+--------------------+
+    # | 0-to-1     | 0-to-1             | 0-to-1             | 0-to-1             | 
+    # | 1-to-0     | 1-to-0             | 1-to-0             | 1-to-0             | 
+    # | 0-to-Z     | 0-to-1             | to−Z               | 0-to-Z             |
+    # | Z-to-1     | 0-to-1             | 0-to-1             | Z-to-1             | 
+    # | 1-to-Z     | 1-to-0             | to−Z               | 1-to-Z             |
+    # | Z-to-0     | 1-to-0             | 1-to-0             | Z-to-0             | 
+    # | 0-to-X     | 0-to-1             | min(0-to-1,to−Z)   | min(0-to-1,0-to-Z) | 
+    # | X-to-1     | 0-to-1             | 0-to-1             | max(0-to-1,Z-to-1) | 
+    # | 1-to-X     | 1-to-0             | min(1-to-0,to−Z)   | min(1-to-0,1-to-Z) | 
+    # | X-to-0     | 1-to-0             | 1-to-0             | max(1-to-0,Z-to-0) | 
+    # | X-to-Z     | max(0-to-1,1-to-0) | to−Z               | max(0-to-Z,1-to-Z) | 
+    # | Z-to-X     | min(0-to-1,1-to-0) | min(0-to-1,1-to-0) | min(Z-to-0,Z-to-1) | 
+    # +------------+--------------------+--------------------+--------------------+
 
+    l = p[1]
+    trans_list = ['01','10','0Z','Z1','1Z','Z0','0X','X1','1X','X0','XZ','ZX'];
     paths = dict()
-    if len(p) == 2:
-        paths['nominal'] = p[1]
-    elif len(p) == 3:
-        paths['fast'] = p[1]
-        paths['slow'] = p[2]
-    elif len(p) == 4:
-        paths['fast'] = p[1]
-        paths['nominal'] = p[2]
-        paths['slow'] = p[3]
+    if len(l) == 12:
+        for i in range(0,12):
+            paths[trans_list[i]] = l[i]
+    elif len(l) == 1:
+        for i in range(0,12):
+            paths[trans_list[i]] = l[0]
+    elif len(l) == 2:
+        paths['01'] = l[0]
+        paths['10'] = l[1]
+        paths['0Z'] = l[0]
+        paths['Z1'] = l[0]
+        paths['1Z'] = l[1]
+        paths['Z0'] = l[1]
+        paths['0X'] = l[0]
+        paths['X1'] = l[0]
+        paths['1X'] = l[1]
+        paths['X0'] = l[1]
+        paths['XZ'] = None; # IEEE Std: shall be max('01','10')
+        paths['ZX'] = None; # IEEE Std: shall be min('01','10')
+    elif len(l) == 3:
+        paths['01'] = l[0]
+        paths['10'] = l[1]
+        paths['0Z'] = l[2]
+        paths['Z1'] = l[0]
+        paths['1Z'] = l[2]
+        paths['Z0'] = l[1]
+        paths['0X'] = None; # IEEE Std: shall be min('01','0Z')
+        paths['X1'] = l[0]
+        paths['1X'] = None; # IEEE Std: shall be min('10','0Z')
+        paths['X0'] = l[1]
+        paths['XZ'] = l[2]
+        paths['ZX'] = None; # IEEE Std: shall be min('01','10')
+    elif len(l) == 6:
+        paths['01'] = l[0]
+        paths['10'] = l[1]
+        paths['0Z'] = l[2]
+        paths['Z1'] = l[3]
+        paths['1Z'] = l[4]
+        paths['Z0'] = l[5]
+        paths['0X'] = None; # IEEE Std: shall be min('01','0Z')
+        paths['X1'] = None; # IEEE Std: shall be max('01','Z1')
+        paths['1X'] = None; # IEEE Std: shall be min('10','1Z')
+        paths['X0'] = None; # IEEE Std: shall be max('10','Z0')
+        paths['XZ'] = None; # IEEE Std: shall be max('0Z','1Z')
+        paths['ZX'] = None; # IEEE Std: shall be min('Z0','Z1')
+    else:
+        raise Exception("Semanic error for delval_list line: %d: len=%d can be 1, 2, 3, 6 or 12 values %s" % (p.lineno(0),len(l),str(l)))
+
     p[0] = paths
 
 
@@ -475,9 +579,22 @@ def p_device(p):
 
 
 def p_iopath(p):
-    '''iopath : LPAR IOPATH port_spec port_spec delval_list RPAR'''
-    iopath = utils.add_iopath(p[3], p[4], p[5])
-    p[0] = iopath
+    '''iopath : LPAR IOPATH port_spec port_spec delval_list RPAR
+              | LPAR IOPATH port_spec port_spec retain_def delval_list RPAR'''
+    if (len(p)==7):
+        # 1st rule (w/o RETAIN)
+        iopath = utils.add_iopath(p[3], p[4], p[5])
+        p[0] = iopath
+    else:
+        # 2nd rule (w/- RETAIN)
+        iopath = utils.add_iopath(p[3], p[4], p[6])
+        retain = utils.add_retain(p[3], p[4], p[5])
+        p[0] = [iopath, retain]
+
+
+def p_retain_def(p):
+    '''retain_def : LPAR RETAIN delval_list RPAR'''
+    p[0] = p[3]
 
 
 def p_port_spec(p):
@@ -576,6 +693,15 @@ def p_real_triple(p):
         p[0] = {'min': None, 'avg': None, 'max': None};
     else:
         p[0] = p[2];
+
+
+def p_real_triple_list(p):
+    '''real_triple_list : real_triple
+                   | real_triple_list real_triple'''
+    if len(p)==2:
+        p[0] = [p[1]];
+    else:
+        p[0] = p[1] + [p[2]];
 
 
 def p_equation(p):
