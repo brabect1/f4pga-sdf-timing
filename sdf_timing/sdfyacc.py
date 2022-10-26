@@ -25,11 +25,11 @@ from .sdflex import tokens
 timings = dict()
 
 header = dict()
-delays_list = list()
+#TODO:remove delays_list = list()
 cells = dict()
 
 #TODO:remove tmp_delay_list = list()
-tmp_constr_list = list()
+#TODO:remove tmp_constr_list = list()
 
 
 def remove_quotation(s):
@@ -364,6 +364,8 @@ def p_recrem_check(p):
     p[0] = [tcheck]; #TODO change from list to scalar
 
 
+#TODO SDF Std. defines other entries than just PATHCONSTRAINT's
+#     (e.g. PERIODCONSTRAINT, ARRIVAL and others).
 def p_timingenv(p):
     'timingenv : LPAR TIMINGENV constraints_list RPAR'
     p[0] = p[3];
@@ -373,12 +375,21 @@ def p_constraints_list(p):
     '''constraints_list : path_constraint
                         | constraints_list path_constraint'''
     if len(p) == 2:
-        delays_list.extend(p[1])
+        #TODO:remove delays_list.extend(p[1])
+        p[0] = [p[1]];
     else:
-        delays_list.extend(p[2])
-    tmp_constr_list[:] = []
+        #TODO:remove delays_list.extend(p[2])
+        p[0] = p[1] + [p[2]];
+    #TODO:rmeove tmp_constr_list[:] = []
 
 
+#TODO SDF Std. defines an optional constraint name of the type
+#     `(NAME <string>)` (before the 1st `port_spec`).
+#TODO SDF Std. allows more than two ports in the constraint
+#     definition. All but the 1st and last are intermediate
+#     points of the path. To capture the intermediate points
+#     (or better the full path) into an existing dict structure,
+#     it may go under the `paths` dicktionary.
 def p_path_constraint(p):
     '''path_constraint : LPAR PATHCONSTRAINT port_spec port_spec real_triple \
     real_triple RPAR'''
@@ -386,9 +397,12 @@ def p_path_constraint(p):
     paths = dict()
     paths['rise'] = p[5]
     paths['fall'] = p[6]
-    constr = utils.add_constraint('pathconstraint', p[3], p[4], paths)
-    tmp_constr_list.append(constr)
-    p[0] = tmp_constr_list
+    # Per SDF Std. the 1st port_spec is `from` and the last port_spec
+    # is `to`.
+    constr = utils.add_constraint('pathconstraint', p[4], p[3], paths)
+    #TODO:remove tmp_constr_list.append(constr)
+    #TODO:remove p[0] = tmp_constr_list
+    p[0] = constr;
 
 
 def p_delay(p):

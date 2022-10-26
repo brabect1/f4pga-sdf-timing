@@ -640,6 +640,25 @@ class TestSyntaxElements(unittest.TestCase):
 
 
     #-------------------------------------
+    # pathconstraint
+    #-------------------------------------
+
+    def test_pathconstraint_simple(self):
+        data ='''(PATHCONSTRAINT a y (9:10:11) (12:13:14))'''
+        reconfigure(startsym='path_constraint', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'a', 'to_pin': 'y', 'type': 'pathconstraint',
+                'is_timing_check': False, 'is_timing_env': True,
+                'is_cond': False,'cond_equation': None,
+                'from_pin_edge': None, 'to_pin_edge': None};
+        act = {k: sdf[k] for k in exp.keys()};
+        self.assertEqual( act, exp );
+
+        import json;
+        print( json.dumps(sdf, indent=2) );
+
+
+    #-------------------------------------
     # timingcheck
     #-------------------------------------
 
@@ -693,6 +712,31 @@ class TestSyntaxElements(unittest.TestCase):
         for i in range(0,len(exp)):
             act.append( {k: sdf[i][k] for k in exp[i].keys()} );
         self.assertEqual( act, exp );
+
+
+    #-------------------------------------
+    # timingenv
+    #-------------------------------------
+
+    def test_timingenv_list(self):
+        data ='''(TIMINGENV
+        (PATHCONSTRAINT I2.H01 I1.N01 (989:1269:1269) (989:1269:1269))
+        (PATHCONSTRAINT I2.H01 I3.N01 (904:1087:1087) (904:1087:1087))
+        )'''
+        reconfigure(startsym='timingenv', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = [
+                {'from_pin': 'I2.H01', 'to_pin': 'I1.N01',
+                    'type': 'pathconstraint', 'is_timing_env': True},
+                {'from_pin': 'I2.H01', 'to_pin': 'I3.N01',
+                    'type': 'pathconstraint', 'is_timing_env': True}
+                ];
+        act = [];
+        self.assertEqual( len(sdf), len(exp) );
+        for i in range(0,len(exp)):
+            act.append( {k: sdf[i][k] for k in exp[i].keys()} );
+        self.assertEqual( act, exp );
+        #TODO check path delay records
 
 
     #-------------------------------------
