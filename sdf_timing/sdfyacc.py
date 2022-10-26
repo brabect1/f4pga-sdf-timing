@@ -508,9 +508,7 @@ def p_del(p):
         p[0] = [p[1]]
 
 
-def p_delval_list(p):
-    '''delval_list : real_triple_list'''
-
+def expand_delval_list(l):
     # The number of delvals in the delval_list can be one, two, three, six or
     # twelve. Note, however, that the amount of data you include in a delay
     # definition entry must be consistent with the analysis tool’s ability to
@@ -566,7 +564,6 @@ def p_delval_list(p):
     # | Z-to-X     | min(0-to-1,1-to-0) | min(0-to-1,1-to-0) | min(Z-to-0,Z-to-1) | 
     # +------------+--------------------+--------------------+--------------------+
 
-    l = p[1]
     trans_list = ['01','10','0Z','Z1','1Z','Z0','0X','X1','1X','X0','XZ','ZX'];
     paths = dict()
     if len(l) == 12:
@@ -617,7 +614,14 @@ def p_delval_list(p):
     else:
         raise Exception("Semanic error for delval_list line: %d: len=%d can be 1, 2, 3, 6 or 12 values %s" % (p.lineno(0),len(l),str(l)))
 
-    p[0] = paths
+    return paths
+
+def p_delval_list(p):
+    '''delval_list : real_triple_list'''
+    if not len(p[1]) in [1,2,3,6,12]:
+        raise Exception("Semanic error for delval_list line: %d: len=%d can be 1, 2, 3, 6 or 12 values %s" % (p.lineno(0),len(p[1]),str(p[1])))
+
+    p[0] = p[1]
 
 
 def p_device(p):

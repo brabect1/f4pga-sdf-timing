@@ -141,7 +141,8 @@ def emit_delay_entries(delays):
     entries_incremental = ""
     entries = ""
 
-    for delay in sorted(delays):
+    #for delay in sorted(delays):
+    for delay in delays:
         entry = ""
         delay = delays[delay]
         if not delay['is_absolute'] and not delay['is_incremental']:
@@ -166,9 +167,8 @@ def emit_delay_entries(delays):
 
         tim_val_str = ""
 
-        for path in ['fast', 'nominal', 'slow']:
-            if path in delay['delay_paths']:
-                tim_val_str += gen_timing_entry(delay['delay_paths'][path])
+        for delval in delay['delay_paths']:
+            tim_val_str += gen_timing_entry(delval)
 
         indent = ""
         if delay['type'].startswith("port"):

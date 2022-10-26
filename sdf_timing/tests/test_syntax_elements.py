@@ -861,8 +861,8 @@ class TestSyntaxElements(unittest.TestCase):
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
 
-        import json;
-        print( json.dumps(sdf, indent=2) );
+        ## import json;
+        ## print( json.dumps(sdf, indent=2) );
 
 
 
