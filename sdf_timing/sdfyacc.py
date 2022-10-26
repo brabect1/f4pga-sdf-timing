@@ -256,9 +256,9 @@ def p_timing_check_list(p):
     '''timing_check_list : t_check
                          | timing_check_list t_check'''
     if len(p) == 2:
-        p[0] = p[1];
+        p[0] = [p[1]];
     else:
-        p[0] = p[1] + p[2];
+        p[0] = p[1] + [p[2]];
     #TODO:remove tmp_delay_list[:] = []
 
 
@@ -283,7 +283,7 @@ def p_removal_check(p):
     tcheck = utils.add_tcheck('removal', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_recovery_check(p):
@@ -295,7 +295,7 @@ def p_recovery_check(p):
     tcheck = utils.add_tcheck('recovery', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_hold_check(p):
@@ -306,7 +306,7 @@ def p_hold_check(p):
     tcheck = utils.add_tcheck('hold', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_setup_check(p):
@@ -317,7 +317,7 @@ def p_setup_check(p):
     tcheck = utils.add_tcheck('setup', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_width_check(p):
@@ -328,7 +328,7 @@ def p_width_check(p):
     tcheck = utils.add_tcheck('width', p[3], p[3], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_period_check(p):
@@ -339,7 +339,7 @@ def p_period_check(p):
     tcheck = utils.add_tcheck('period', p[3], p[3], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_nochange_check(p):
@@ -351,7 +351,7 @@ def p_nochange_check(p):
     tcheck = utils.add_tcheck('nochange', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_setuphold_check(p):
@@ -364,7 +364,7 @@ def p_setuphold_check(p):
     tcheck = utils.add_tcheck('setuphold', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 def p_recrem_check(p):
@@ -377,7 +377,7 @@ def p_recrem_check(p):
     tcheck = utils.add_tcheck('recrem', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
-    p[0] = [tcheck]; #TODO change from list to scalar
+    p[0] = tcheck;
 
 
 #TODO SDF Std. defines other entries than just PATHCONSTRAINT's

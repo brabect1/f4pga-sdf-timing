@@ -534,7 +534,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'width', 'is_timing_check': True, 'is_cond': False,
                 'from_pin_edge': None, 'to_pin_edge': None};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -544,7 +544,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'width', 'is_timing_check': True, 'is_cond': False,
                 'from_pin_edge': 'negedge', 'to_pin_edge': 'negedge'};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -554,7 +554,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'path/to/rst', 'to_pin': 'path/to/rst', 'type': 'width', 'is_timing_check': True,
                 'is_cond': False, 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge'};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -564,7 +564,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'CP', 'to_pin': 'CP', 'type': 'width', 'is_timing_check': True, 'is_cond': True,
                 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge', 'cond_equation': 'ENABLE'};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -579,7 +579,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'period', 'is_timing_check': True, 'is_cond': False,
                 'from_pin_edge': None, 'to_pin_edge': None};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -589,7 +589,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'clk', 'to_pin': 'clk', 'type': 'period', 'is_timing_check': True, 'is_cond': True,
                 'from_pin_edge': 'negedge', 'to_pin_edge': 'negedge', 'cond_equation': 'a/b == 1\'b0 && ! c'};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -599,7 +599,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'path/to/CK', 'to_pin': 'path/to/CK', 'type': 'period', 'is_timing_check': True,
                 'is_cond': False, 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge'};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -614,7 +614,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'addr', 'to_pin': 'wr', 'type': 'nochange', 'is_timing_check': True, 'is_cond': False,
                 'from_pin_edge': None, 'to_pin_edge': None};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -624,7 +624,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'rst', 'to_pin': 'por', 'type': 'nochange', 'is_timing_check': True, 'is_cond': True,
                 'from_pin_edge': 'posedge', 'to_pin_edge': None, 'cond_equation': '1\'b0'};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
@@ -634,7 +634,7 @@ class TestSyntaxElements(unittest.TestCase):
         sdf = parse(data);
         exp = {'from_pin': 'rst', 'to_pin': 'por', 'type': 'nochange', 'is_timing_check': True, 'is_cond': True,
                 'from_pin_edge': 'posedge', 'to_pin_edge': 'negedge', 'cond_equation': 'a/b & c'};
-        act = {k: sdf[0][k] for k in exp.keys()}; # !!! TODO `sdf` is a list of paths, which is strange here
+        act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
         #TODO compare delay object
 
