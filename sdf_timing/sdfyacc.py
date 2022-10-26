@@ -24,7 +24,7 @@ from .sdflex import tokens
 
 timings = dict()
 
-header = dict()
+#TODO:remove header = dict()
 #TODO:remove delays_list = list()
 cells = dict()
 
@@ -57,15 +57,23 @@ def p_sdf_header(p):
                   | sdf_header hierarchy_divider
                   | sdf_header timescale'''
 
-    p[0] = p[1]
+    #p[0] = p[1]
+    if len(p)==2:
+        p[0] = p[1];
+    else:
+        p[0] = {**p[1],**p[2]};
 
 
 def p_sdf_header_qstring(p):
     '''sdf_header_qstring : LPAR qstring_header_entry QSTRING RPAR
                           | LPAR qstring_header_entry RPAR'''
+    #TODO:remove if len(p) == 5:
+    #TODO:remove     header[p[2].lower()] = remove_quotation(p[3])
+    #TODO:remove     p[0] = header
     if len(p) == 5:
-        header[p[2].lower()] = remove_quotation(p[3])
-        p[0] = header
+        p[0] = {p[2].lower(): remove_quotation(p[3])};
+    else:
+        p[0] = {p[2].lower(): ''};
 
 
 def p_qstring_header_entry(p):
@@ -81,9 +89,13 @@ def p_qstring_header_entry(p):
 
 def p_sdf_header_qfloat(p):
     '''sdf_header_qfloat : LPAR qfloat_header_entry QFLOAT RPAR'''
+    #TODO:remove if len(p) == 5:
+    #TODO:remove     header[p[2].lower()] = remove_quotation(str(p[3]))
+    #TODO:remove     p[0] = header
     if len(p) == 5:
-        header[p[2].lower()] = remove_quotation(str(p[3]))
-        p[0] = header
+        p[0] = {p[2].lower(): remove_quotation(p[3])};
+    else:
+        p[0] = {p[2].lower(): None};
 
 
 def p_qfloat_header_entry(p):
@@ -94,27 +106,31 @@ def p_qfloat_header_entry(p):
 
 def p_sdf_voltage(p):
     '''voltage : LPAR VOLTAGE real_triple_no_par RPAR'''
-    header['voltage'] = p[3]
-    p[0] = header
+    #TODO:remove header['voltage'] = p[3]
+    #TODO:remove p[0] = header
+    p[0] = {'voltage': p[3]};
 
 
 def p_sdf_temperature(p):
     '''temperature : LPAR TEMPERATURE real_triple_no_par RPAR'''
-    header['temperature'] = p[3]
-    p[0] = header
+    #TODO:remove header['temperature'] = p[3]
+    #TODO:remove p[0] = header
+    p[0] = {'temperature': p[3]};
 
 
 def p_sdf_divider(p):
     '''hierarchy_divider : LPAR DIVIDER DOT RPAR
                | LPAR DIVIDER SLASH RPAR'''
-    header['divider'] = p[3]
-    p[0] = header
+    #TODO:remove header['divider'] = p[3]
+    #TODO:remove p[0] = header
+    p[0] = {'divider': p[3]};
 
 
 def p_sdf_timescale(p):
     '''timescale : LPAR TIMESCALE FLOAT STRING RPAR'''
-    header['timescale'] = str(p[3]) + p[4]
-    p[0] = header
+    #TODO:remove header['timescale'] = str(p[3]) + p[4]
+    #TODO:remove p[0] = header
+    p[0] = {'timescale': str(p[3]) + p[4]};
 
 
 def p_cell_list(p):

@@ -653,9 +653,7 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': None, 'to_pin_edge': None};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-
-        import json;
-        print( json.dumps(sdf, indent=2) );
+        #TODO check delay values
 
 
     #-------------------------------------
@@ -819,6 +817,52 @@ class TestSyntaxElements(unittest.TestCase):
         for i in exp.keys():
             act.update( {i: {k: sdf[i][k] for k in exp[i].keys()}} );
         self.assertEqual( act, exp );
+
+
+    #-------------------------------------
+    # header
+    #-------------------------------------
+
+    def test_header_full(self):
+        data ='''
+        (SDFVERSION "3.0")
+        (DESIGN "testchip")
+        (DATE "Dec 17, 1991 14:49:48")
+        (VENDOR "Big Chips Inc.")
+        (PROGRAM "Chip Analyzer")
+        (VERSION "1.3b")
+        (DIVIDER .)
+        (VOLTAGE :3.8: )
+        (PROCESS "worst")
+        (TEMPERATURE : 37:)
+        (TIMESCALE 10ps)
+        '''
+        reconfigure(startsym='sdf_header', errorlog=self.null_logger);
+        sdf = parse(data);
+        self.assertTrue( type(sdf) is dict );
+        exp = {'sdfversion': '3.0', 'design': 'testchip',
+                'date': 'Dec 17, 1991 14:49:48', 'vendor': 'Big Chips Inc.',
+                'program': 'Chip Analyzer', 'version': '1.3b', 'divider': '.',
+                'process': 'worst', 'timescale': '10ps',
+                'voltage': {'min':None, 'avg':3.8, 'max':None},
+                'temperature': {'min':None, 'avg':37, 'max':None}
+                };
+        act = {k: sdf[k] for k in exp.keys()};
+        self.assertEqual( act, exp );
+
+    def test_header_minimal(self):
+        data ='''
+        (SDFVERSION "3.0")
+        '''
+        reconfigure(startsym='sdf_header', errorlog=self.null_logger);
+        sdf = parse(data);
+        self.assertTrue( type(sdf) is dict );
+        exp = {'sdfversion': '3.0'};
+        act = {k: sdf[k] for k in exp.keys()};
+        self.assertEqual( act, exp );
+
+        import json;
+        print( json.dumps(sdf, indent=2) );
 
 
 
