@@ -141,8 +141,7 @@ def emit_delay_entries(delays):
     entries_incremental = ""
     entries = ""
 
-    #for delay in sorted(delays):
-    for delay in delays:
+    for delay in sorted(delays):
         entry = ""
         delay = delays[delay]
         if not delay['is_absolute'] and not delay['is_incremental']:
@@ -270,3 +269,72 @@ def emit_sdf(timings, timescale='1ps', uppercase_celltype=False):
     # fix "None" entries
     sdf = sdf.replace("None", "")
     return sdf
+
+import os
+import sys
+import json
+import re
+from ply import yacc
+from sdf_timing import sdfparse, sdfyacc, sdflex
+
+def parse(input):
+    sdfparse.init()
+    sdflex.input_data = input
+    return sdfyacc.parser.parse(sdflex.input_data)
+
+def format_triplet(entry):
+
+    if entry['min'] is None and entry['avg'] is None\
+            and entry['max'] is None:
+        # if all the values are None return empty timing
+        return ""
+
+    return "{MIN}:{AVG}:{MAX}".format(
+        MIN=entry['min'],
+        AVG=entry['avg'],
+        MAX=entry['max'])
+
+def print_timing_record(rec, indent):
+    if rec is None or not 'type' in rec:
+        pass
+
+    if any(rec['type'] in s for s in ['interconnect', 'iopath', 'port']):
+        print(2*indent + "(DELAY");
+        print(3*indent + ("(ABSOLUTE" if rec['is_absolute'] else "(INCREMENTAL"));
+        print(3*indent + ")\n" + 2*indent + ")");
+
+def print_sdf(sdfdata, indent="  "):
+    print("(DELAYFILE");
+
+    for k,v in sdfdata['header'].items():
+        if k == "voltage" or k == 'temperature':
+            v = format_triplet(v);
+        elif k == 'divider':
+            pass
+        elif k == 'timescale':
+            m = re.match('^(\d+)(\D+)$',v);
+            v = m.group(1) + ' ' + m.group(2);
+        else:
+            v = '\"' + v + '\"';
+        print( indent + "({key} {value})".format(key=k.upper(), value=v) );
+
+    if 'cells' in sdfdata:
+        for cell,celldata in sdfdata['cells'].items():
+            print(indent + "(CELL");
+            for inst,instdata in celldata.items():
+                print( indent*2 + "(CELLTYPE \"{}\")".format(cell) );
+                print( indent*2 + "(INSTANCE {})".format(inst) );
+                for rec,recdata in instdata.items():
+                    print_timing_record(recdata, indent);
+            print(indent + ")");
+    print(")", end='');
+
+
+
+def print_sdf_files(files):
+    for f in files:
+        #print(f);
+        with open(f) as sdffile:
+            sdfdata = parse( sdffile.read() );
+            #print( json.dumps(sdfdata, indent=2) );
+            print_sdf( sdfdata );
