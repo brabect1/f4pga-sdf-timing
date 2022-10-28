@@ -372,8 +372,8 @@ def p_recrem_check(p):
     real_triple RPAR'''
 
     paths = dict()
-    paths['recovery'] = p[5]
-    paths['removal'] = p[6]
+    paths['setup'] = p[5]
+    paths['hold'] = p[6]
     tcheck = utils.add_tcheck('recrem', p[3], p[4], paths)
     #TODO:remove tmp_delay_list.append(tcheck)
     #TODO:remove p[0] = tmp_delay_list
