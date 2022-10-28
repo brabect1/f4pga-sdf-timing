@@ -12,14 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import os
 import os.path
 import argparse
-from sdf_timing import sdfparse
+from sdf_timing import sdfparse, sdfwrite
 
-opt_parser = argparse.ArgumentParser(description='Reads input SDFs and writes out back into SDFs in a target directory.')
-opt_parser.add_argument('--dir', type=str, required=True, help='Path to a directory where to write out parsed SDFs.', metavar='<path>')
-opt_parser.add_argument('files', nargs='+', help='List of SDF files to parse.', metavar='file')
+# Define command-line API
+opt_parser = argparse.ArgumentParser(
+        description='Reads input SDFs and writes out back into SDFs in a target directory.'
+        );
+opt_parser.add_argument('--dir', type=str, default='.',
+        help='Path to a directory where to write out parsed SDFs.', metavar='<path>'
+        );
+opt_parser.add_argument('--stdout', default=False, action='store_true',
+        help='Print to standard output instead to a file.'
+        );
+opt_parser.add_argument('--force', default=False, action='store_true',
+        help='Overwrites the output file if already exists.'
+        );
+opt_parser.add_argument('--indent', type=int, default=2, metavar='N',
+        help='Number of spaces for indentation.'
+        );
+opt_parser.add_argument('files', nargs='+', metavar='file',
+        help='List of SDF files to parse.'
+        );
+
+# parse command line arguments
 args = opt_parser.parse_args();
 
 
@@ -33,9 +52,15 @@ else:
             with open(f) as sdffile:
                 print("Reading %s ..." % f);
                 sdf = sdfparse.parse(sdffile.read())
-                sdf = sdfparse.emit(sdf)
-                of = os.path.join(args.dir, os.path.basename(f))
-                with open(of,'w') as outfile:
-                    print("Writing %s ..." % of);
-                    outfile.write( sdf )
+                if not args.stdout:
+                    of = os.path.join(args.dir, os.path.basename(f))
+                    if os.path.exists(of) and not args.force:
+                        print("File already exists, not writing: %s" % of);
+                        continue;
+
+                    with open(of,'w') as outfile:
+                        print("Writing %s ..." % of);
+                        sdfwrite.print_sdf(sdf, indent=args.indent*' ', channel=outfile)
+                else:
+                    sdfwrite.print_sdf(sdf, indent=args.indent*' ')
 
