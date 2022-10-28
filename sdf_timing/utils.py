@@ -155,19 +155,6 @@ def add_iopath(pfrom, pto, paths):
                          delay_paths=paths)
 
 
-def add_retain(pfrom, pto, paths):
-
-    name = "iopathretain_"
-    name += pfrom['port'] + "_" + pto['port']
-    return prepare_entry(name=name,
-                         type='iopathretain',
-                         from_pin=pfrom['port'],
-                         to_pin=pto['port'],
-                         from_pin_edge=pfrom['port_edge'],
-                         to_pin_edge=pto['port_edge'],
-                         delay_paths=paths)
-
-
 def add_device(port, paths):
 
     name = "device_"

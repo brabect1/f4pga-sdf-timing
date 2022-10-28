@@ -436,6 +436,8 @@ def p_absolute_list(p):
         p[0] = p[1] + p[2];
 
 
+#TODO SDF Std. does not seem to allow empty delay specification (neither
+#TODO absolute, nor incremental).
 def p_absolute_empty(p):
     '''absolute : LPAR ABSOLUTE RPAR'''
     p[0] = []
@@ -636,12 +638,14 @@ def p_iopath(p):
     if (len(p)==7):
         # 1st rule (w/o RETAIN)
         iopath = utils.add_iopath(p[3], p[4], p[5])
+        iopath['has_retain'] = False;
         p[0] = iopath
     else:
         # 2nd rule (w/- RETAIN)
         iopath = utils.add_iopath(p[3], p[4], p[6])
-        retain = utils.add_retain(p[3], p[4], p[5])
-        p[0] = [iopath, retain]
+        iopath['has_retain'] = True;
+        iopath['retain_paths'] = p[5];
+        p[0] = iopath
 
 
 def p_retain_def(p):

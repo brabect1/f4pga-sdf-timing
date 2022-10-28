@@ -56,6 +56,71 @@ def parse(input):
     return sdfyacc.parser.parse(sdflex.input_data)
 
 
+class Delval:
+    min = None;
+    avg = None;
+    max = None;
+
+    def __init__(self, *args):
+        if len(args)==1:
+            if args[0] is None:
+                pass
+            elif type(args[0]) is list:
+                self.min, self.avg, self.max, *ignore = args[0] + [None, None, None];
+            elif type(args[0]) is dict:
+                self.min = args[0]['min'] if 'min' in args[0] else None;
+                self.avg = args[0]['avg'] if 'avg' in args[0] else None;
+                self.max = args[0]['max'] if 'max' in args[0] else None;
+            elif type(args[0]) is str or not hasattr(args[0],'__len__'):
+                self.min = args[0];
+            else:
+                raise TypeError()
+        else:
+            self.min, self.avg, self.max, *ignore = list(args) + [None, None, None];
+
+    def __iter__(self):
+        return [self.min, self.avg, self.max];
+        #return {'min':self.min, 'avg':self.avg, 'max':self.max};
+
+    def __str__(self):
+        if self.min is None and self.avg is None and self.max is None:
+            return "()"
+
+        return "(" + \
+            ":".join([str(v) if v is not None else "" for v in [self.min, self.avg, self.max]]) + ")";
+
+    def __eq__(self, other):
+        if other is None:
+            return  (self.min is None and self.avg is None and self.max is None);
+        elif isinstance(other, Delval):
+            return self.min == other.min and self.avg == other.avg and self.max == other.max;
+        elif type(other) is list:
+            return [self.min, self.avg, self.max] == other
+        elif type(other) is dict:
+            return {'min':self.min, 'avg':self.avg, 'max':self.max} == other;
+        return False;
+
+
+class DelvalList:
+
+    def __init__(self, *args):
+        self.delvals = [];
+        for a in args:
+            self.delvals.append( Delval(a) );
+
+    def __iter__(self):
+        return self.delvals.__iter__();
+
+    def __str__(self):
+        return "[" + ",".join([str(v) for v in self.delvals]) + "]";
+
+    def __eq__(self,other):
+        if type(other) is list and len(self.delvals) == len(other):
+            for x,y in zip(self.delvals,other):
+                if x != y: return False;
+            return True;
+        return False;
+
 
 class TestSyntaxElements(unittest.TestCase):
 
@@ -235,7 +300,7 @@ class TestSyntaxElements(unittest.TestCase):
         exp = {'from_pin': 'a/b/c', 'to_pin': 'e/f', 'type': 'interconnect'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        self.assertEqual( DelvalList([1,2,3]), sdf['delay_paths'] );
 
     def test_interconnect_empty_delay(self):
         data ='(INTERCONNECT a b ())'
@@ -657,6 +722,38 @@ class TestSyntaxElements(unittest.TestCase):
 
 
     #-------------------------------------
+    # iopath
+    #-------------------------------------
+
+    def test_iopath_simple(self):
+        data ='''(IOPATH a y (1:2:3))'''
+        reconfigure(startsym='iopath', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
+                'is_timing_check': False, 'is_timing_env': False,
+                'is_cond': False,'cond_equation': None,
+                'from_pin_edge': None, 'to_pin_edge': None,
+                'has_retain': False};
+        act = {k: sdf[k] for k in exp.keys()};
+        self.assertEqual( act, exp );
+        self.assertEqual( DelvalList([1,2,3]), sdf['delay_paths'] );
+
+    def test_iopath_retain_simple(self):
+        data ='''(IOPATH a y (RETAIN (0:1:2)) (1:2:3))'''
+        reconfigure(startsym='iopath', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = {'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
+                'is_timing_check': False, 'is_timing_env': False,
+                'is_cond': False,'cond_equation': None,
+                'from_pin_edge': None, 'to_pin_edge': None,
+                'has_retain': True};
+        act = {k: sdf[k] for k in exp.keys()};
+        self.assertEqual( act, exp );
+        self.assertEqual( DelvalList([1,2,3]), sdf['delay_paths'] );
+        self.assertEqual( DelvalList([0,1,2]), sdf['retain_paths'] );
+
+
+    #-------------------------------------
     # timingcheck
     #-------------------------------------
 
@@ -681,14 +778,17 @@ class TestSyntaxElements(unittest.TestCase):
 
 
     #-------------------------------------
-    # delay
+    # delay (absolute)
     #-------------------------------------
 
+    # empty absolute delay not supported by SDF grammar (as per SDF Std.)
+    #TODO presently fails due to being allowed by the grammar
+    @unittest.expectedFailure
     def test_delay_absolute_empty(self):
         data ='''(DELAY (ABSOLUTE))'''
         reconfigure(startsym='delay', errorlog=self.null_logger);
-        sdf = parse(data);
-        self.assertEqual( sdf, [] );
+        with self.assertRaises(Exception):
+            sdf = parse(data);
 
     def test_delay_absolute_1(self):
         data ='''
@@ -710,6 +810,18 @@ class TestSyntaxElements(unittest.TestCase):
         for i in range(0,len(exp)):
             act.append( {k: sdf[i][k] for k in exp[i].keys()} );
         self.assertEqual( act, exp );
+
+
+    #-------------------------------------
+    # delay (incremental)
+    #-------------------------------------
+
+    # empty incremental delay not supported by SDF grammar (as per SDF Std.)
+    def test_delay_increment_empty(self):
+        data ='''(DELAY (INCREMENT))'''
+        reconfigure(startsym='delay', errorlog=self.null_logger);
+        with self.assertRaises(Exception):
+            sdf = parse(data);
 
 
     #-------------------------------------
