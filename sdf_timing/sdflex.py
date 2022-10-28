@@ -180,9 +180,9 @@ def t_STRING(t):
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-    if (t.lexer.lineno % 100) == 0:
-        import sys
-        print("## %d" % t.lexer.lineno, file=sys.stderr)
+    #TODO:debug if (t.lexer.lineno % 100) == 0:
+    #TODO:debug     import sys
+    #TODO:debug     print("## %d" % t.lexer.lineno, file=sys.stderr)
 
 
 def t_error(t):
