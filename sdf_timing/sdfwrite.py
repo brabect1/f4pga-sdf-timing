@@ -289,22 +289,25 @@ def format_triplet(entry):
         # if all the values are None return empty timing
         return ""
 
-    return "{MIN}:{AVG}:{MAX}".format(
-        MIN=entry['min'],
-        AVG=entry['avg'],
-        MAX=entry['max'])
+    l = [];
+    for k in ['min','avg','max']:
+        v = entry[k];
+        if v is None:
+            l.append("");
+        elif v.is_integer():
+            l.append(str(int(v)));
+        else:
+            l.append(str(v));
+    return ":".join(l);
+
 
 def print_timing_record(rec, indent):
     if rec is None or not 'type' in rec:
         pass
 
-    if any(rec['type'] in s for s in ['interconnect', 'iopath', 'port']):
-        print(2*indent + "(DELAY");
-        print(3*indent + ("(ABSOLUTE" if rec['is_absolute'] else "(INCREMENTAL"));
-        print(3*indent + ")\n" + 2*indent + ")");
 
-def print_sdf(sdfdata, indent="  "):
-    print("(DELAYFILE");
+def print_sdf(sdfdata, indent="  ", channel=sys.stdout):
+    print("(DELAYFILE", file=channel);
 
     for k,v in sdfdata['header'].items():
         if k == "voltage" or k == 'temperature':
@@ -316,25 +319,194 @@ def print_sdf(sdfdata, indent="  "):
             v = m.group(1) + ' ' + m.group(2);
         else:
             v = '\"' + v + '\"';
-        print( indent + "({key} {value})".format(key=k.upper(), value=v) );
+        print( indent + "({key} {value})".format(key=k.upper(), value=v), file=channel );
 
     if 'cells' in sdfdata:
         for cell,celldata in sdfdata['cells'].items():
-            print(indent + "(CELL");
+            print(indent + "(CELL", file=channel);
             for inst,instdata in celldata.items():
-                print( indent*2 + "(CELLTYPE \"{}\")".format(cell) );
-                print( indent*2 + "(INSTANCE {})".format(inst) );
+                print( indent*2 + "(CELLTYPE \"{}\")".format(cell), file=channel );
+                print( indent*2 + "(INSTANCE {})".format(inst if inst is not None else ''), file=channel );
+
+                last_rectype = None;
+                rectype = None;
                 for rec,recdata in instdata.items():
-                    print_timing_record(recdata, indent);
-            print(indent + ")");
-    print(")", end='');
+                    if any(recdata['type'] in s for s in ['interconnect', 'iopath', 'port', 'device']):
+                        rectype = "absdelay" if recdata['is_absolute'] else "incdelay";
+                    elif any(recdata['type'] in s for s in ['setup', 'hold', 'setuphold', 'recovery', 'removal',
+                        'recrem', 'width', 'period', 'nochange']):
+                        rectype = 'tcheck';
+                    elif any(recdata['type'] in s for s in ['pathconstraint']):
+                        rectype = 'tenv';
+                    else:
+                        rectype = None
+
+                    if rectype != last_rectype:
+                        print_closing_bracket(last_rectype, indent, channel);
+                        print_opening_bracket(rectype, indent, channel);
+
+                    if rectype=='absdelay' or rectype=='incdelay':
+                        print( 4*indent + format_delay(recdata), file=channel );
+                    elif rectype=='tcheck':
+                        print( 3*indent + format_tcheck(recdata), file=channel );
+                    elif rectype=='tenv':
+                        print( 3*indent + format_tenv(recdata), file=channel );
+                    else:
+                        raise Exception('Wrongly detected record type!', recdata, rectype)
+
+                    last_rectype = rectype;
+
+                print_closing_bracket(last_rectype, indent, channel);
+
+            print(indent + ")", file=channel);
+    print(")", end='', file=channel);
 
 
+def print_closing_bracket(rectype, indent, channel):
+    if rectype is None:
+        pass
 
-def print_sdf_files(files):
+    if rectype == 'absdelay' or rectype == 'incdelay':
+        print(3*indent + ")\n" + 2*indent + ")", file=channel);
+    elif rectype == 'tcheck' or rectype == 'tenv':
+        print(2*indent + ")", file=channel);
+
+
+def print_opening_bracket(rectype, indent, channel):
+    if rectype is None:
+        pass
+
+    if rectype == 'absdelay' or rectype == 'incdelay':
+        print(2*indent + "(DELAY", file=channel);
+        print(3*indent + ("(ABSOLUTE" if rectype=='absdelay' else "(INCREMENT"), file=channel);
+    elif rectype == 'tcheck':
+        print(2*indent + "(TIMINGCHECK", file=channel);
+    elif rectype == 'tenv':
+        print(2*indent + "(TIMINGENV", file=channel);
+
+
+def format_pin(pin, edge, conditional=False, condition=None):
+    if edge is not None:
+        pin = "(" + edge + " " + pin + ")"
+
+    if conditional:
+        pin = '(COND ' + condition + ' ' + pin + ')'
+
+    return pin
+
+
+def format_delval(triplet):
+
+    if triplet['min'] is None and triplet['avg'] is None\
+            and triplet['max'] is None:
+        # if all the values are None return empty timing
+        return "()"
+
+    return "("+format_triplet(triplet)+")"
+
+
+def format_delval_list( delval_list ):
+    if delval_list is None:
+        return None
+
+    tim_val_str = ""
+    for delval in delval_list:
+        tim_val_str += format_delval(delval)
+    return tim_val_str
+
+
+def format_delay(data):
+    if data is None:
+        return None
+
+    if not data['is_absolute'] and not data['is_incremental']:
+        raise Exception('Misconfigured delay entry!', data);
+
+    entry = None
+    if data['type']=='port' or data['type']=='device':
+        entry = "({type} {input} {timval})".format(
+            type=data['type'].upper(),
+            input=format_pin(data['from_pin'], data['from_pin_edge']),
+            timval=format_delval_list( data['delay_paths'] ))
+    elif data['type']=='interconnect' or data['type']=='iopath':
+        entry = "({type} {input} {output} {timval})".format(
+            type=data['type'].upper(),
+            input=format_pin(data['from_pin'], data['from_pin_edge']),
+            output=format_pin(data['to_pin'], data['to_pin_edge']),
+            timval=format_delval_list( data['delay_paths'] ))
+    else:
+        raise Exception('Unknown delay type!', data);
+
+    if data['is_cond']:
+        entry = "(COND {equation} {entry})".format( entry=entry,
+            equation=data['cond_equation'])
+
+    return entry;
+
+
+def format_tenv(data):
+    if data is None:
+        return None
+
+    if not data['is_timing_env']:
+        raise Exception('Misconfigured timingenv entry!', data);
+
+    entry = None
+    if data['type']=='pathconstraint':
+        entry = "(PATHCONSTRAINT {input} {output} {RISE} {FALL})".format(
+            input=format_pin(data['from_pin'], data['from_pin_edge']),
+            output=format_pin(data['to_pin'], data['to_pin_edge']),
+            RISE=format_delval(data['delay_paths']['rise']),
+            FALL=format_delval(data['delay_paths']['fall']))
+    return entry
+
+
+def format_tcheck(data):
+    if data is None:
+        return None
+
+    if data['is_absolute'] or data['is_incremental']:
+        raise Exception('Misconfigured timingcheck entry!', data);
+    if not data['is_timing_check']:
+        raise Exception('Misconfigured timingcheck entry!', data);
+
+    entry = None
+    if data['type']=='width' or data['type']=='period':
+        entry = "({type} {input} {timval})".format(
+            type=data['type'].upper(),
+            input=format_pin(data['from_pin'], data['from_pin_edge'], data['is_cond'],
+                data['cond_equation']),
+            timval=format_delval(data['delay_paths']['nominal']))
+
+    elif data['type']=='setuphold' or data['type']=='recrem' or data['type']=='nochange':
+        entry = "({type} {output} {input} {SETUP} {HOLD})".format(
+            type=data['type'].upper(),
+            input=format_pin(data['from_pin'], data['from_pin_edge'], data['is_cond'],
+                data['cond_equation']),
+            output=format_pin(data['to_pin'], data['to_pin_edge']),
+            SETUP=format_delval(data['delay_paths']['setup']),
+            HOLD=format_delval(data['delay_paths']['hold']))
+
+    else:
+        entry = "({type} {output} {input} {timval})".format(
+            type=data['type'].upper(),
+            input=format_pin(data['from_pin'], data['from_pin_edge'], data['is_cond'],
+                data['cond_equation']),
+            output=format_pin(data['to_pin'], data['to_pin_edge']),
+            timval=format_delval(data['delay_paths']['nominal']))
+
+    return entry;
+
+
+def print_sdf_file(f, indent='  ', channel=sys.stdout):
+    #print(f);
+    with open(f) as sdffile:
+        sdfdata = parse( sdffile.read() );
+        #print( json.dumps(sdfdata, indent=2) );
+        print_sdf( sdfdata, indent, channel );
+
+
+def print_sdf_files(files, indent='  '):
     for f in files:
-        #print(f);
-        with open(f) as sdffile:
-            sdfdata = parse( sdffile.read() );
-            #print( json.dumps(sdfdata, indent=2) );
-            print_sdf( sdfdata );
+        print_sdf_file(f,indent);
+
