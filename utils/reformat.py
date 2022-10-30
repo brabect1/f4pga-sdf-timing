@@ -31,6 +31,9 @@ opt_parser.add_argument('--stdout', default=False, action='store_true',
 opt_parser.add_argument('--force', default=False, action='store_true',
         help='Overwrites the output file if already exists.'
         );
+opt_parser.add_argument('--gzip', default=False, action='store_true',
+        help='Compresses the output file with gzip. Ignored when using --stdout.'
+        );
 opt_parser.add_argument('--indent', type=int, default=2, metavar='N',
         help='Number of spaces for indentation.'
         );
@@ -43,24 +46,39 @@ args = opt_parser.parse_args();
 
 
 if not os.path.isdir(args.dir):
-    print("Not a directory: " + str(args.dir));
+    print("Not a directory: " + str(args.dir), file=sys.stderr);
 else:
     for f in args.files:
         if not os.path.exists(f):
-            print("Does not exists: '%s'" % f);
+            print("Does not exists: '%s'" % f, file=sys.stderr);
         else:
-            with open(f) as sdffile:
-                print("Reading %s ..." % f);
-                sdf = sdfparse.parse(sdffile.read())
+            sdf = None;
+            print("Reading %s ..." % f, file=sys.stderr);
+            if f.endswith('gz'):
+                import gzip;
+                with gzip.open(f,'rt') as sdffile:
+                    sdf = sdfparse.parse(sdffile.read())
+            else:
+                with open(f) as sdffile:
+                    sdf = sdfparse.parse(sdffile.read())
+
+            if sdf is not None:
                 if not args.stdout:
-                    of = os.path.join(args.dir, os.path.basename(f))
+                    of = os.path.join(args.dir, os.path.basename(f));
+                    if args.gzip: of += '.gz';
+
                     if os.path.exists(of) and not args.force:
-                        print("File already exists, not writing: %s" % of);
+                        print("File already exists, not writing: %s" % of, file=sys.stderr);
                         continue;
 
-                    with open(of,'w') as outfile:
-                        print("Writing %s ..." % of);
-                        sdfwrite.print_sdf(sdf, indent=args.indent*' ', channel=outfile)
+                    print("Writing %s ..." % of, file=sys.stderr);
+                    if args.gzip:
+                        import gzip;
+                        with gzip.open(of,'wt') as outfile:
+                            sdfwrite.print_sdf(sdf, indent=args.indent*' ', channel=outfile)
+                    else:
+                        with open(of,'w') as outfile:
+                            sdfwrite.print_sdf(sdf, indent=args.indent*' ', channel=outfile)
                 else:
                     sdfwrite.print_sdf(sdf, indent=args.indent*' ')
 
