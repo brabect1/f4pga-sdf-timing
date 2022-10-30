@@ -150,15 +150,14 @@ def add_delays_to_cell(celltype, instance, delays):
         if not delay_name in occurrences:
             occurrences[delay_name] = 1;
         else:
-            #TODO Not sure what the delay name is eventually used for
-            #     (other than for indexing). It may be better to use
-            #     other postfix than `_#`, which may cause other
-            #     collisions.
-            suffix = "_" + str(occurrences[delay_name]);
-
+            suffix = "#" + str(occurrences[delay_name]);
             delay_name += suffix;
-            while delay_name in occurrences:
-                delay_name += suffix;
+            if delay_name in occurrences:
+                # The way how delay entries names are constructed shall guarantee
+                # there will be no other namig collision. Hence we raise an exception
+                # if the case occurs as it points to an underlying issue.
+                raise Exception("Unexpected name clash!", delay);
+
             occurrences[delay_name] = 1;
             occurrences[delay['name']] += 1;
             delay['name'] = delay_name;
