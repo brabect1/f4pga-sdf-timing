@@ -26,7 +26,7 @@ timings = dict()
 
 #TODO:remove header = dict()
 #TODO:remove delays_list = list()
-cells = dict()
+#TODO:remove cells = dict()
 
 #TODO:remove tmp_delay_list = list()
 #TODO:remove tmp_constr_list = list()
@@ -136,10 +136,13 @@ def p_sdf_timescale(p):
 def p_cell_list(p):
     '''cell_list : cell
                  | cell_list cell'''
-    p[0] = p[1]
+    if len(p) == 2:
+        p[0] = [p[1]];
+    else:
+        p[0] = p[1] + [p[2]];
 
 
-def add_delays_to_cell(celltype, instance, delays):
+def add_delays_to_cell(cell, delays):
 
     if delays is None:
         return
@@ -161,30 +164,34 @@ def add_delays_to_cell(celltype, instance, delays):
             occurrences[delay_name] = 1;
             occurrences[delay['name']] += 1;
             delay['name'] = delay_name;
-        cells[celltype][instance][delay['name']] = delay
+        if not 'delays' in cell:
+            cell['delays'] = dict();
+        cell['delays'][delay['name']] = delay
 
 
-def add_cell(name, instance):
-
-    # name
-    if name not in cells:
-        cells[name] = dict()
-    # instance
-    if instance not in cells[name]:
-        cells[name][instance] = dict()
+#TODO:remove def add_cell(name, instance):
+#TODO:remove 
+#TODO:remove     # name
+#TODO:remove     if name not in cells:
+#TODO:remove         cells[name] = dict()
+#TODO:remove     # instance
+#TODO:remove     if instance not in cells[name]:
+#TODO:remove         cells[name][instance] = dict()
 
 
 def p_timing_cell(p):
     '''cell : LPAR CELL celltype instance timing_cell_lst RPAR
             | LPAR CELL celltype instance RPAR'''
 
-    add_cell(p[3], p[4])
+    #TODO:remove add_cell(p[3], p[4])
+    cell = {'cell':p[3], 'inst':p[4]};
     #TODO:remove add_delays_to_cell(p[3], p[4], delays_list)
     delays = [];
     if len(p)==7:
         delays = p[5];
-    add_delays_to_cell(p[3], p[4], delays)
-    p[0] = cells
+    #TODO:remove add_delays_to_cell(p[3], p[4], delays)
+    add_delays_to_cell(cell, delays)
+    p[0] = cell
     #TODO:remove delays_list[:] = []
 
 

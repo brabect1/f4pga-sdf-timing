@@ -934,12 +934,14 @@ class TestSyntaxElements(unittest.TestCase):
         '''
         reconfigure(startsym='cell', errorlog=self.null_logger);
         sdf = parse(data);
-        self.assertTrue('AND2' in sdf);
+        self.assertEqual( sdf.keys(), {'cell','inst','delays'} );
 
-        sdf = sdf['AND2'];
-        self.assertTrue('top/b/d' in sdf);
+        # test cell and instance name
+        exp = { 'cell':'AND2', 'inst':'top/b/d' };
+        act = {k: sdf[k] for k in exp.keys()};
+        self.assertEqual( act, exp );
 
-        sdf = sdf['top/b/d'];
+        # test delay records
         exp = {
                 "iopath_a_y": {
                     'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
@@ -950,10 +952,11 @@ class TestSyntaxElements(unittest.TestCase):
                     'is_cond': False, 'cond_equation': None
                     }
                 };
-        self.assertEqual( sdf.keys(), exp.keys() );
+        self.assertEqual( sdf['delays'].keys(), exp.keys() );
+
         act = {};
         for i in exp.keys():
-            act.update( {i: {k: sdf[i][k] for k in exp[i].keys()}} );
+            act.update( {i: {k: sdf['delays'][i].get(k) for k in exp[i].keys()}} );
         self.assertEqual( act, exp );
 
     # This test case exercises that there will be no aliasing
@@ -974,26 +977,29 @@ class TestSyntaxElements(unittest.TestCase):
         '''
         reconfigure(startsym='cell', errorlog=self.null_logger);
         sdf = parse(data);
-        self.assertTrue('AND2' in sdf);
+        self.assertEqual( sdf.keys(), {'cell','inst','delays'} );
 
-        sdf = sdf['AND2'];
-        self.assertTrue('top.b.d' in sdf);
+        # test cell and instance name
+        exp = { 'cell':'AND2', 'inst':'top.b.d' };
+        act = {k: sdf[k] for k in exp.keys()};
+        self.assertEqual( act, exp );
 
-        sdf = sdf['top.b.d'];
+        # test delay records
         exp = {
                 "iopath_a_y": {
                     'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
                     'is_cond': False, 'cond_equation': None
                     },
-                "iopath_a_y_1": {
+                "iopath_a_y#1": {
                     'from_pin': 'a', 'to_pin': 'y', 'type': 'iopath',
                     'is_cond': True, 'cond_equation': 'en'
                     }
                 };
-        self.assertEqual( sdf.keys(), exp.keys() );
+        self.assertEqual( sdf['delays'].keys(), exp.keys() );
+
         act = {};
         for i in exp.keys():
-            act.update( {i: {k: sdf[i][k] for k in exp[i].keys()}} );
+            act.update( {i: {k: sdf['delays'][i].get(k) for k in exp[i].keys()}} );
         self.assertEqual( act, exp );
 
 

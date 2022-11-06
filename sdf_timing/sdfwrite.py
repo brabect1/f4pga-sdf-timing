@@ -246,8 +246,22 @@ def emit_sdf(timings, timescale='1ps', uppercase_celltype=False):
     (TIMESCALE {})
 """.format(timescale)
         if 'cells' in timings:
-            for cell in sorted(timings['cells']):
-                for location in sorted(timings['cells'][cell]):
+            cells = dict();
+            for cell in timings['cells']:
+                cellname = cell['cell'];
+                instname = cell['inst'];
+                if cellname not in cells:
+                    cells[cellname] = dict();
+                if instname not in cells[cellname]:
+                    cells[cellname][instname] = dict();
+
+                if 'delays' in cell:
+                    cells[cellname][instname].update( cell['delays'] );
+                    #for  in cell['delays']:
+                    #    cells[cellname][instname][delay['name']] = delay
+
+            for cell in sorted(cells):
+                for location in sorted(cells[cell]):
 
                     if uppercase_celltype:
                         celltype = cell.upper()
@@ -261,11 +275,11 @@ def emit_sdf(timings, timescale='1ps', uppercase_celltype=False):
                     sdf += """
         (INSTANCE {location})""".format(location=location)
                     sdf += emit_delay_entries(
-                        timings['cells'][cell][location])
+                        cells[cell][location])
                     sdf += emit_timingcheck_entries(
-                        timings['cells'][cell][location])
+                        cells[cell][location])
                     sdf += emit_timingenv_entries(
-                        timings['cells'][cell][location])
+                        cells[cell][location])
                     sdf += """
     )"""
         sdf += """
@@ -337,15 +351,16 @@ def print_sdf(sdfdata, indent="  ", channel=sys.stdout):
         print( indent + "({key} {value})".format(key=k.upper(), value=v), file=channel );
 
     if 'cells' in sdfdata:
-        for cell,celldata in sdfdata['cells'].items():
+        for instdata in sdfdata['cells']:
             print(indent + "(CELL", file=channel);
-            for inst,instdata in celldata.items():
-                print( indent*2 + "(CELLTYPE \"{}\")".format(cell), file=channel );
-                print( indent*2 + "(INSTANCE {})".format(inst if inst is not None else ''), file=channel );
+            print( indent*2 + "(CELLTYPE \"{}\")".format(instdata['cell']), file=channel );
+            inst = instdata['inst'] if 'inst' in instdata else None;
+            print( indent*2 + "(INSTANCE {})".format(inst if inst is not None else ''), file=channel );
 
+            if 'delays' in instdata:
                 last_rectype = None;
                 rectype = None;
-                for rec,recdata in instdata.items():
+                for rec,recdata in instdata['delays'].items():
                     if any(recdata['type'] in s for s in ['interconnect', 'iopath', 'port', 'device']):
                         rectype = "absdelay" if recdata['is_absolute'] else "incdelay";
                     elif any(recdata['type'] in s for s in ['setup', 'hold', 'setuphold', 'recovery', 'removal',
