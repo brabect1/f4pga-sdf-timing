@@ -700,13 +700,6 @@ def p_real_triple_no_par(p):
 
     delays_triple = dict()
     if len(p) == 6:
-        #TODO Potentially consider using `all` key instead of the the triplet
-        #     keys. As it is now, it is impossible to differentiate if the input
-        #     was a single value or a triplet. It makes no different for interpretation,
-        #     but doing an identity "format conversion" (or "pretty printing")
-        #     could not be 100% accurate (as would need to either collapse an all-the-same
-        #     triplet to a single value, or expand a single value to an all-the-same
-        #     triplet).
         delays_triple['min'] = float(p[1])
         delays_triple['avg'] = float(p[3])
         delays_triple['max'] = float(p[5])
@@ -734,6 +727,13 @@ def p_real_triple_no_par(p):
         delays_triple['max'] = float(p[3]) if p[3] != ':' else None
 
     elif len(p) == 2:
+        #TODO Potentially consider using `all` key instead of the the triplet
+        #     keys. As it is now, it is impossible to differentiate if the input
+        #     was a single value or a triplet. It makes no different for interpretation,
+        #     but doing an identity "format conversion" (or "pretty printing")
+        #     could not be 100% accurate (as would need to either collapse an all-the-same
+        #     triplet to a single value, or expand a single value to an all-the-same
+        #     triplet).
         delays_triple = dict.fromkeys(['min','avg','max'],float(p[1]));
 
     else:
