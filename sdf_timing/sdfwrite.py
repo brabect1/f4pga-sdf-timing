@@ -20,15 +20,20 @@
 
 def gen_timing_entry(entry):
 
-    if entry['min'] is None and entry['avg'] is None\
+    if 'all' in entry:
+        if entry['all'] is None: return "()";
+    elif entry['min'] is None and entry['avg'] is None\
             and entry['max'] is None:
         # if all the values are None return empty timing
         return "()"
 
-    return "({MIN}:{AVG}:{MAX})".format(
-        MIN=entry['min'],
-        AVG=entry['avg'],
-        MAX=entry['max'])
+    if 'all' in entry:
+        return "(" + str(entry['all']) + ")";
+    else:
+        return "({MIN}:{AVG}:{MAX})".format(
+            MIN=entry['min'],
+            AVG=entry['avg'],
+            MAX=entry['max'])
 
 
 def emit_timingenv_entries(delays):
@@ -284,21 +289,31 @@ def parse(input):
 
 def format_triplet(entry):
 
-    if entry['min'] is None and entry['avg'] is None\
+    if 'all' in entry:
+        if entry['all'] is None: return "";
+    elif entry['min'] is None and entry['avg'] is None\
             and entry['max'] is None:
         # if all the values are None return empty timing
         return ""
 
-    l = [];
-    for k in ['min','avg','max']:
-        v = entry[k];
-        if v is None:
-            l.append("");
-        elif v.is_integer():
-            l.append(str(int(v)));
+    if 'all' in entry:
+        v = entry['all'];
+        if v.is_integer():
+            s = str(int(v));
         else:
-            l.append(str(v));
-    return ":".join(l);
+            s = str(v);
+        return s;
+    else:
+        l = [];
+        for k in ['min','avg','max']:
+            v = entry[k];
+            if v is None:
+                l.append("");
+            elif v.is_integer():
+                l.append(str(int(v)));
+            else:
+                l.append(str(v));
+        return ":".join(l);
 
 
 def print_timing_record(rec, indent):
@@ -396,12 +411,6 @@ def format_pin(pin, edge, conditional=False, condition=None):
 
 
 def format_delval(triplet):
-
-    if triplet['min'] is None and triplet['avg'] is None\
-            and triplet['max'] is None:
-        # if all the values are None return empty timing
-        return "()"
-
     return "("+format_triplet(triplet)+")"
 
 

@@ -106,7 +106,7 @@ class Delval:
 
     def __eq__(self, other):
         if other is None:
-            return  (self.all is None and self.min is None and self.avg is None and self.max is None);
+            return self.isNone();
         elif isinstance(other, Delval):
             return self.all == other.all and self.min == other.min and self.avg == other.avg and self.max == other.max;
         elif type(other) is list:
@@ -118,7 +118,7 @@ class Delval:
             else:
                 return [self.min, self.avg, self.max] == other;
         elif type(other) is dict:
-            if self.all is not None:
+            if self.all is not None or self.isNone():
                 if 'all' in other:
                     return {'all':self.all} == other;
                 else:
@@ -127,6 +127,8 @@ class Delval:
                 return {'min':self.min, 'avg':self.avg, 'max':self.max} == other;
         return False;
 
+    def isNone(self):
+        return  (self.all is None and self.min is None and self.avg is None and self.max is None);
 
 # Represents a list of delay value triplets.
 #
@@ -160,8 +162,14 @@ class TestSyntaxElements(unittest.TestCase):
     # Compiles a delay dictionary from a triplet value.
     # We use this method for better maintence of changes in the SDF dictionary
     # key names.
-    def compile_delay(self, triple):
+    def compile_delay_triplet(self, triple):
         return {'min': triple[0], 'avg': triple[1], 'max': triple[2]};
+
+    # Compiles a delay dictionary from a scalar delay value.
+    # We use this method for better maintence of changes in the SDF dictionary
+    # key names.
+    def compile_delay_scalar(self, scalar):
+        return {'all': scalar};
 
     def setUp(self):
         self.null_logger = NullLogger;
@@ -205,73 +213,64 @@ class TestSyntaxElements(unittest.TestCase):
         data ='()'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [None,None,None] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_scalar( None );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_three_int_1(self):
         data ='(1:2:3)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [1,2,3] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [1,2,3] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_three_int_2(self):
         data ='(-1:0:1)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [-1,0,1] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [-1,0,1] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_two_int_1(self):
         data ='(1:2:)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [1,2,None] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [1,2,None] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_two_int_2(self):
         data ='(1::3)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [1,None,3] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [1,None,3] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_two_int_3(self):
         data ='(:2:3)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [None,2,3] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [None,2,3] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_one_int_1(self):
         data ='(1::)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [1,None,None] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [1,None,None] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_one_int_2(self):
         data ='(:2:)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [None,2,None] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [None,2,None] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_one_int_3(self):
         data ='(::3)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [None,None,3] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_triplet( [None,None,3] );
+        self.assertEqual( sdf, exp );
 
     def test_rvalue_triple_none(self):
         data ='(::)'
@@ -307,9 +306,15 @@ class TestSyntaxElements(unittest.TestCase):
         data ='(123)'
         reconfigure(startsym='real_triple', errorlog=self.null_logger);
         sdf = parse(data);
-        exp = self.compile_delay( [123,123,123] );
-        act = {k: sdf[k] for k in exp.keys()};
-        self.assertEqual( act, exp );
+        exp = self.compile_delay_scalar(123);
+        self.assertEqual( sdf, exp );
+
+    def test_rvalue_single_float_1(self):
+        data ='(1.23)'
+        reconfigure(startsym='real_triple', errorlog=self.null_logger);
+        sdf = parse(data);
+        exp = self.compile_delay_scalar(1.23);
+        self.assertEqual( sdf, exp );
 
     #-------------------------------------
     # interconnect delay

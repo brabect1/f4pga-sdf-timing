@@ -727,19 +727,18 @@ def p_real_triple_no_par(p):
         delays_triple['max'] = float(p[3]) if p[3] != ':' else None
 
     elif len(p) == 2:
-        #TODO Potentially consider using `all` key instead of the the triplet
-        #     keys. As it is now, it is impossible to differentiate if the input
-        #     was a single value or a triplet. It makes no different for interpretation,
-        #     but doing an identity "format conversion" (or "pretty printing")
-        #     could not be 100% accurate (as would need to either collapse an all-the-same
-        #     triplet to a single value, or expand a single value to an all-the-same
-        #     triplet).
-        delays_triple = dict.fromkeys(['min','avg','max'],float(p[1]));
+        # Using `all` key instead of the `min`, `avg`, `max` triplet
+        # keys. Using a different key makes it possible to differentiate if the input
+        # was a single scalar value or a triplet and hence enables doing an identity
+        # "format transformation" (or "pretty printing") with 100% accuracy. Using
+        # triplet keys, one would need to either collapse an all-the-same
+        # triplet to a single value, or expand a single value to an all-the-same
+        # triplet, which may cause differences to the input, parsed syntax.
+        delays_triple['all'] = float(p[1]);
 
     else:
-        delays_triple['min'] = None
-        delays_triple['avg'] = None
-        delays_triple['max'] = None
+        # Same comment as for the `len()==2` case.
+        delays_triple['all'] = None;
 
     p[0] = delays_triple
 
@@ -750,9 +749,8 @@ def p_real_triple(p):
     '''real_triple : LPAR real_triple_no_par RPAR
                    | LPAR RPAR'''
 
-    delays_triple = dict()
     if len(p) == 3:
-        p[0] = {'min': None, 'avg': None, 'max': None};
+        p[0] = {'all': None};
     else:
         p[0] = p[2];
 
