@@ -24,12 +24,6 @@ from .sdflex import tokens
 
 timings = dict()
 
-#TODO:remove header = dict()
-#TODO:remove delays_list = list()
-#TODO:remove cells = dict()
-
-#TODO:remove tmp_delay_list = list()
-#TODO:remove tmp_constr_list = list()
 
 
 def remove_quotation(s):
@@ -67,9 +61,6 @@ def p_sdf_header(p):
 def p_sdf_header_qstring(p):
     '''sdf_header_qstring : LPAR qstring_header_entry QSTRING RPAR
                           | LPAR qstring_header_entry RPAR'''
-    #TODO:remove if len(p) == 5:
-    #TODO:remove     header[p[2].lower()] = remove_quotation(p[3])
-    #TODO:remove     p[0] = header
     if len(p) == 5:
         p[0] = {p[2].lower(): remove_quotation(p[3])};
     else:
@@ -89,9 +80,6 @@ def p_qstring_header_entry(p):
 
 def p_sdf_header_qfloat(p):
     '''sdf_header_qfloat : LPAR qfloat_header_entry QFLOAT RPAR'''
-    #TODO:remove if len(p) == 5:
-    #TODO:remove     header[p[2].lower()] = remove_quotation(str(p[3]))
-    #TODO:remove     p[0] = header
     if len(p) == 5:
         p[0] = {p[2].lower(): remove_quotation(p[3])};
     else:
@@ -106,30 +94,22 @@ def p_qfloat_header_entry(p):
 
 def p_sdf_voltage(p):
     '''voltage : LPAR VOLTAGE real_triple_no_par RPAR'''
-    #TODO:remove header['voltage'] = p[3]
-    #TODO:remove p[0] = header
     p[0] = {'voltage': p[3]};
 
 
 def p_sdf_temperature(p):
     '''temperature : LPAR TEMPERATURE real_triple_no_par RPAR'''
-    #TODO:remove header['temperature'] = p[3]
-    #TODO:remove p[0] = header
     p[0] = {'temperature': p[3]};
 
 
 def p_sdf_divider(p):
     '''hierarchy_divider : LPAR DIVIDER DOT RPAR
                | LPAR DIVIDER SLASH RPAR'''
-    #TODO:remove header['divider'] = p[3]
-    #TODO:remove p[0] = header
     p[0] = {'divider': p[3]};
 
 
 def p_sdf_timescale(p):
     '''timescale : LPAR TIMESCALE FLOAT STRING RPAR'''
-    #TODO:remove header['timescale'] = str(p[3]) + p[4]
-    #TODO:remove p[0] = header
     p[0] = {'timescale': str(p[3]) + p[4]};
 
 
@@ -169,30 +149,16 @@ def add_delays_to_cell(cell, delays):
         cell['delays'][delay['name']] = delay
 
 
-#TODO:remove def add_cell(name, instance):
-#TODO:remove 
-#TODO:remove     # name
-#TODO:remove     if name not in cells:
-#TODO:remove         cells[name] = dict()
-#TODO:remove     # instance
-#TODO:remove     if instance not in cells[name]:
-#TODO:remove         cells[name][instance] = dict()
-
-
 def p_timing_cell(p):
     '''cell : LPAR CELL celltype instance timing_cell_lst RPAR
             | LPAR CELL celltype instance RPAR'''
 
-    #TODO:remove add_cell(p[3], p[4])
     cell = {'cell':p[3], 'inst':p[4]};
-    #TODO:remove add_delays_to_cell(p[3], p[4], delays_list)
     delays = [];
     if len(p)==7:
         delays = p[5];
-    #TODO:remove add_delays_to_cell(p[3], p[4], delays)
     add_delays_to_cell(cell, delays)
     p[0] = cell
-    #TODO:remove delays_list[:] = []
 
 
 def p_timing_cell_lst(p):
@@ -229,7 +195,6 @@ def p_instance(p):
 def p_timing_check(p):
     '''timing_check : LPAR TIMINGCHECK timing_check_list RPAR'''
     p[0] = p[3];
-    #TODO:remove delays_list.extend( p[3] );
 
 
 def p_timing_port(p):
@@ -265,7 +230,6 @@ def p_timing_check_list(p):
         p[0] = [p[1]];
     else:
         p[0] = p[1] + [p[2]];
-    #TODO:remove tmp_delay_list[:] = []
 
 
 def p_t_check(p):
@@ -287,8 +251,6 @@ def p_removal_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('removal', p[3], p[4], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -299,8 +261,6 @@ def p_recovery_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('recovery', p[3], p[4], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -310,8 +270,6 @@ def p_hold_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('hold', p[3], p[4], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -321,8 +279,6 @@ def p_setup_check(p):
     paths = dict()
     paths['nominal'] = p[5]
     tcheck = utils.add_tcheck('setup', p[3], p[4], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -332,8 +288,6 @@ def p_width_check(p):
     paths = dict()
     paths['nominal'] = p[4]
     tcheck = utils.add_tcheck('width', p[3], p[3], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -343,8 +297,6 @@ def p_period_check(p):
     paths = dict()
     paths['nominal'] = p[4]
     tcheck = utils.add_tcheck('period', p[3], p[3], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -355,8 +307,6 @@ def p_nochange_check(p):
     paths['setup'] = p[5]
     paths['hold'] = p[6]
     tcheck = utils.add_tcheck('nochange', p[3], p[4], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -368,8 +318,6 @@ def p_setuphold_check(p):
     paths['setup'] = p[5]
     paths['hold'] = p[6]
     tcheck = utils.add_tcheck('setuphold', p[3], p[4], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -381,8 +329,6 @@ def p_recrem_check(p):
     paths['setup'] = p[5]
     paths['hold'] = p[6]
     tcheck = utils.add_tcheck('recrem', p[3], p[4], paths)
-    #TODO:remove tmp_delay_list.append(tcheck)
-    #TODO:remove p[0] = tmp_delay_list
     p[0] = tcheck;
 
 
@@ -397,12 +343,9 @@ def p_constraints_list(p):
     '''constraints_list : path_constraint
                         | constraints_list path_constraint'''
     if len(p) == 2:
-        #TODO:remove delays_list.extend(p[1])
         p[0] = [p[1]];
     else:
-        #TODO:remove delays_list.extend(p[2])
         p[0] = p[1] + [p[2]];
-    #TODO:rmeove tmp_constr_list[:] = []
 
 
 #TODO SDF Std. defines an optional constraint name of the type
@@ -422,8 +365,6 @@ def p_path_constraint(p):
     # Per SDF Std. the 1st port_spec is `from` and the last port_spec
     # is `to`.
     constr = utils.add_constraint('pathconstraint', p[4], p[3], paths)
-    #TODO:remove tmp_constr_list.append(constr)
-    #TODO:remove p[0] = tmp_constr_list
     p[0] = constr;
 
 
@@ -453,8 +394,6 @@ def p_absolute_delay_list(p):
     '''absolute : LPAR ABSOLUTE delay_list RPAR'''
     for d in p[3]:
         d['is_absolute'] = True
-    #TODO:remove delays_list.extend(list(p[3]))
-    #TODO:remove tmp_delay_list[:] = []
     p[0] = p[3]
 
 
@@ -472,8 +411,6 @@ def p_increment_delay_list(p):
 
     for d in p[3]:
         d['is_incremental'] = True
-    #TODO:remove delays_list.extend(list(p[3]))
-    #TODO:remove tmp_delay_list[:] = []
     p[0] = p[3]
 
 
