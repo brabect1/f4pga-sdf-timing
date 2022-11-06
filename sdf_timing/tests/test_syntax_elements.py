@@ -56,34 +56,49 @@ def parse(input):
     return sdfyacc.parser.parse(sdflex.input_data)
 
 
+# Represents a delay value triplet.
+#
+# The class is primarily to provide common type operations like string
+# conversion or equality operator.
 class Delval:
     min = None;
     avg = None;
     max = None;
+    all = None;
 
     def __init__(self, *args):
         if len(args)==1:
             if args[0] is None:
                 pass
             elif type(args[0]) is list:
+                # For a list type, we assume the value is to represent a triplet
+                # and so make no guess that a list with a single element is to
+                # represent an "all" scalar.
                 self.min, self.avg, self.max, *ignore = args[0] + [None, None, None];
             elif type(args[0]) is dict:
-                self.min = args[0]['min'] if 'min' in args[0] else None;
-                self.avg = args[0]['avg'] if 'avg' in args[0] else None;
-                self.max = args[0]['max'] if 'max' in args[0] else None;
+                if 'all' in args[0]:
+                    self.all = args[0]['all'];
+                else:
+                    self.min = args[0]['min'] if 'min' in args[0] else None;
+                    self.avg = args[0]['avg'] if 'avg' in args[0] else None;
+                    self.max = args[0]['max'] if 'max' in args[0] else None;
             elif type(args[0]) is str or not hasattr(args[0],'__len__'):
-                self.min = args[0];
+                self.all = args[0];
             else:
                 raise TypeError()
         else:
             self.min, self.avg, self.max, *ignore = list(args) + [None, None, None];
 
     def __iter__(self):
-        return [self.min, self.avg, self.max];
-        #return {'min':self.min, 'avg':self.avg, 'max':self.max};
+        if self.all is None:
+            return [self.min, self.avg, self.max];
+        else:
+            return [self.all];
 
     def __str__(self):
-        if self.min is None and self.avg is None and self.max is None:
+        if self.all is not None:
+            return "(" + str(self.all) + ")";
+        elif self.min is None and self.avg is None and self.max is None:
             return "()"
 
         return "(" + \
@@ -91,16 +106,32 @@ class Delval:
 
     def __eq__(self, other):
         if other is None:
-            return  (self.min is None and self.avg is None and self.max is None);
+            return  (self.all is None and self.min is None and self.avg is None and self.max is None);
         elif isinstance(other, Delval):
-            return self.min == other.min and self.avg == other.avg and self.max == other.max;
+            return self.all == other.all and self.min == other.min and self.avg == other.avg and self.max == other.max;
         elif type(other) is list:
-            return [self.min, self.avg, self.max] == other
+            if self.all is not None:
+                if len(other) == 1:
+                    return self.all == other[0];
+                else:
+                    return [self.all, self.all, self.all] == other;
+            else:
+                return [self.min, self.avg, self.max] == other;
         elif type(other) is dict:
-            return {'min':self.min, 'avg':self.avg, 'max':self.max} == other;
+            if self.all is not None:
+                if 'all' in other:
+                    return {'all':self.all} == other;
+                else:
+                    return {'min':self.all, 'avg':self.all, 'max':self.all} == other;
+            else:
+                return {'min':self.min, 'avg':self.avg, 'max':self.max} == other;
         return False;
 
 
+# Represents a list of delay value triplets.
+#
+# The class is primarily to provide common type operations like string
+# conversion, iteration or equality operator.
 class DelvalList:
 
     def __init__(self, *args):
@@ -291,7 +322,7 @@ class TestSyntaxElements(unittest.TestCase):
         exp = {'from_pin': 'a', 'to_pin': 'b', 'type': 'interconnect'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        self.assertEqual( DelvalList([1,2,3]), sdf['delay_paths'] );
 
     def test_interconnect_simple_2(self):
         data ='(INTERCONNECT a/b/c e/f (1:2:3))'
@@ -309,7 +340,7 @@ class TestSyntaxElements(unittest.TestCase):
         exp = {'from_pin': 'a', 'to_pin': 'b', 'type': 'interconnect'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        self.assertEqual( DelvalList(None), sdf['delay_paths'] );
 
     def test_interconnect_missing_port(self):
         data ='(INTERCONNECT a (1:2:3))'
@@ -601,7 +632,9 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': None, 'to_pin_edge': None};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        self.assertTrue( 'nominal' in sdf['delay_paths'] );
+        self.assertEqual( Delval([4.4,7.5,11.3]), sdf['delay_paths']['nominal'] );
 
     def test_tcheck_width_port_negedge_spec(self):
         data ='''(WIDTH (negedge clk) (4.4:7.5:11.3))''';
@@ -611,7 +644,9 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': 'negedge', 'to_pin_edge': 'negedge'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        self.assertTrue( 'nominal' in sdf['delay_paths'] );
+        self.assertEqual( Delval([4.4,7.5,11.3]), sdf['delay_paths']['nominal'] );
 
     def test_tcheck_width_port_posedge_spec(self):
         data ='''(WIDTH (posedge path/to/rst) (11))''';
@@ -621,7 +656,10 @@ class TestSyntaxElements(unittest.TestCase):
                 'is_cond': False, 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        self.assertTrue( 'nominal' in sdf['delay_paths'] );
+        #TODO Presently not matching.
+        #self.assertEqual( Delval(11), sdf['delay_paths']['nominal'] );
 
     def test_tcheck_width_conditional(self):
         data ='''(WIDTH (COND ENABLE (posedge CP)) (1:1:1) )''';
@@ -631,7 +669,9 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge', 'cond_equation': 'ENABLE'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        self.assertTrue( 'nominal' in sdf['delay_paths'] );
+        self.assertEqual( Delval(1,1,1), sdf['delay_paths']['nominal'] );
 
 
     #-------------------------------------
@@ -646,7 +686,9 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': None, 'to_pin_edge': None};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        self.assertTrue( 'nominal' in sdf['delay_paths'] );
+        self.assertEqual( Delval(1,None,2), sdf['delay_paths']['nominal'] );
 
     def test_tcheck_period_conditional(self):
         data ='''(PERIOD (COND a/b==1'b0 && !c (negedge clk)) (1))''';
@@ -666,7 +708,9 @@ class TestSyntaxElements(unittest.TestCase):
                 'is_cond': False, 'from_pin_edge': 'posedge', 'to_pin_edge': 'posedge'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        self.assertTrue( 'nominal' in sdf['delay_paths'] );
+        self.assertEqual( Delval(None), sdf['delay_paths']['nominal'] );
 
 
     #-------------------------------------
@@ -681,7 +725,11 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': None, 'to_pin_edge': None};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay values
+        exp = {'setup': Delval(None,1,None), 'hold': Delval(None,2,None)};
+        self.assertEqual( sdf['delay_paths'].keys(), exp.keys() );
+        for k,v in exp.items():
+            self.assertEqual( v, sdf['delay_paths'][k] );
 
     def test_tcheck_nochange_conditional_1st(self):
         data ='''(NOCHANGE (COND 1'b0 por) (posedge rst) (1) (2))''';
@@ -718,7 +766,11 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': None, 'to_pin_edge': None};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO check delay values
+        # test delay values
+        exp = {'rise': Delval(9,10,11), 'fall': Delval(12,13,14)};
+        self.assertEqual( sdf['delay_paths'].keys(), exp.keys() );
+        for k,v in exp.items():
+            self.assertEqual( v, sdf['delay_paths'][k] );
 
 
     #-------------------------------------
@@ -846,7 +898,16 @@ class TestSyntaxElements(unittest.TestCase):
         for i in range(0,len(exp)):
             act.append( {k: sdf[i][k] for k in exp[i].keys()} );
         self.assertEqual( act, exp );
-        #TODO check path delay records
+
+        # test delay values
+        exp_delays = [
+                {'rise': Delval(989,1269,1269), 'fall': Delval(989,1269,1269)},
+                {'rise': Delval(904,1087,1087), 'fall': Delval(904,1087,1087)}
+                ];
+        for i in range(0,len(exp_delays)):
+            self.assertEqual( sdf[i]['delay_paths'].keys(), exp_delays[i].keys() );
+            for k,v in exp_delays[i].items():
+                self.assertEqual( v, sdf[i]['delay_paths'].get(k) );
 
 
     #-------------------------------------
