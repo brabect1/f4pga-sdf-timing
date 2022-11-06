@@ -22,9 +22,6 @@ import ply.yacc as yacc
 from . import utils
 from .sdflex import tokens
 
-timings = dict()
-
-
 
 def remove_quotation(s):
     return s.replace('"', '')
@@ -34,6 +31,7 @@ def p_sdf_file(p):
     '''sdf_file : LPAR DELAYFILE sdf_header RPAR
                 | LPAR DELAYFILE sdf_header cell_list RPAR'''
 
+    timings = dict()
     timings['header'] = p[3]
     if p[4] != ')':
         timings['cells'] = p[4]
