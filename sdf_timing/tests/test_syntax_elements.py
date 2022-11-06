@@ -663,8 +663,7 @@ class TestSyntaxElements(unittest.TestCase):
         self.assertEqual( act, exp );
         # test delay value
         self.assertTrue( 'nominal' in sdf['delay_paths'] );
-        #TODO Presently not matching.
-        #self.assertEqual( Delval(11), sdf['delay_paths']['nominal'] );
+        self.assertEqual( Delval(11), sdf['delay_paths']['nominal'] );
 
     def test_tcheck_width_conditional(self):
         data ='''(WIDTH (COND ENABLE (posedge CP)) (1:1:1) )''';
@@ -703,7 +702,9 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': 'negedge', 'to_pin_edge': 'negedge', 'cond_equation': 'a/b == 1\'b0 && ! c'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        self.assertTrue( 'nominal' in sdf['delay_paths'] );
+        self.assertEqual( Delval(1), sdf['delay_paths']['nominal'] );
 
     def test_tcheck_period_port_posedge_spec(self):
         data ='''(PERIOD (posedge path/to/CK) ())''';
@@ -744,7 +745,11 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': 'posedge', 'to_pin_edge': None, 'cond_equation': '1\'b0'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        exp = {'setup': Delval(1), 'hold': Delval(2)};
+        self.assertEqual( sdf['delay_paths'].keys(), exp.keys() );
+        for k,v in exp.items():
+            self.assertEqual( v, sdf['delay_paths'][k] );
 
     def test_tcheck_nochange_conditional_2nd(self):
         data ='''(NOCHANGE (negedge por) (COND a/b&c (posedge rst)) (1) (2))''';
@@ -754,7 +759,11 @@ class TestSyntaxElements(unittest.TestCase):
                 'from_pin_edge': 'posedge', 'to_pin_edge': 'negedge', 'cond_equation': 'a/b & c'};
         act = {k: sdf[k] for k in exp.keys()};
         self.assertEqual( act, exp );
-        #TODO compare delay object
+        # test delay value
+        exp = {'setup': Delval(1), 'hold': Delval(2)};
+        self.assertEqual( sdf['delay_paths'].keys(), exp.keys() );
+        for k,v in exp.items():
+            self.assertEqual( v, sdf['delay_paths'][k] );
 
 
     #-------------------------------------
