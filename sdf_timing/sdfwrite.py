@@ -170,7 +170,6 @@ def emit_delay_entries(delays):
             input_str = delay['from_pin']
 
         tim_val_str = ""
-
         for delval in delay['delay_paths']:
             tim_val_str += gen_timing_entry(delval)
 
@@ -198,16 +197,24 @@ def emit_delay_entries(delays):
                 (COND ({equation})""".format(
                     equation=delay['cond_equation'])
 
+            retain_str = '';
+            if 'retain_paths' in delay:
+                for delval in delay['retain_paths']:
+                    retain_str += gen_timing_entry(delval)
+                retain_str = "(RETAIN " + retain_str + ") ";
+
             entry += """
-                {indent}(IOPATH {input} {output} {timval})""".format(
+                {indent}(IOPATH {input} {output} {retain}{timval})""".format(
                 indent=indent,
                 input=input_str,
                 output=output_str,
+                retain=retain_str,
                 timval=tim_val_str)
 
             if delay['is_cond']:
                 entry += """
-                    )"""
+                )"""
+
         if delay['is_absolute']:
             entries_absolute += entry
             # if it is not absolute it must be incremental
@@ -452,11 +459,21 @@ def format_delay(data):
             type=data['type'].upper(),
             input=format_pin(data['from_pin'], data['from_pin_edge']),
             timval=format_delval_list( data['delay_paths'] ))
-    elif data['type']=='interconnect' or data['type']=='iopath':
+    elif data['type']=='interconnect':
         entry = "({type} {input} {output} {timval})".format(
             type=data['type'].upper(),
             input=format_pin(data['from_pin'], data['from_pin_edge']),
             output=format_pin(data['to_pin'], data['to_pin_edge']),
+            timval=format_delval_list( data['delay_paths'] ))
+    elif data['type']=='iopath':
+        retain = '';
+        if 'retain_paths' in data:
+            retain = "(RETAIN " + format_delval_list( data['retain_paths'] ) + ") ";
+        entry = "({type} {input} {output} {retain}{timval})".format(
+            type=data['type'].upper(),
+            input=format_pin(data['from_pin'], data['from_pin_edge']),
+            output=format_pin(data['to_pin'], data['to_pin_edge']),
+            retain=retain,
             timval=format_delval_list( data['delay_paths'] ))
     else:
         raise Exception('Unknown delay type!', data);
