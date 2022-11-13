@@ -15,6 +15,7 @@
 import unittest
 import os
 import sys
+import re
 from io import StringIO
 
 # add `sdf_timing` source tree into PYTHONPATH
@@ -25,20 +26,38 @@ from ply import yacc
 from .test_syntax_elements import NullLogger, reconfigure, parse
 
 
-# Performs full SDF syntax tests by parsing an input syntax, writing it
-# out to a string buffer and comparing with the expected output.
-class TestParseAndWrite(unittest.TestCase):
-
-    def setUp(self):
-        reconfigure(errorlog=NullLogger);
-        self.buf = StringIO();
-
-    def test_1(self):
-        data ='''
+# Defines a data set to be tested. The structure is a list of records,
+# where each record is a 3-element list such that 1st element is a description,
+# 2nd element is the input data and 3rd element is the expected data.
+# Hence::
+#
+#     [ [<desc>, <intput>, <expected>], [<desc>, <intput>, <expected>], ...]
+#
+testdata = [
+['minimum_sdf',
+'''(DELAYFILE (SDFVERSION "3.0"))''',
+'''\
+(DELAYFILE
+  (SDFVERSION "3.0")
+)
+'''
+],
+['comment',
+'''\
+(DELAYFILE
+  // some comment
+  (SDFVERSION "3.0")
+)''',
+'''\
+(DELAYFILE
+  (SDFVERSION "3.0")
+)'''
+],
+['retain_path',
+'''\
 (DELAYFILE
   (SDFVERSION "3.0")
   (TIMESCALE 100 ps)
-  // this is a comment
   (CELL
     (CELLTYPE "somecell")
     (INSTANCE someinst)
@@ -49,12 +68,9 @@ class TestParseAndWrite(unittest.TestCase):
       )
     )
   )
-)
-'''
-        sdf = parse(data);
-        sdfwrite.print_sdf( sdf, channel=self.buf );
-        act = self.buf.getvalue();
-        exp = '''(DELAYFILE
+)''',
+'''\
+(DELAYFILE
   (SDFVERSION "3.0")
   (TIMESCALE 100 ps)
   (CELL
@@ -68,16 +84,34 @@ class TestParseAndWrite(unittest.TestCase):
     )
   )
 )'''
-        self.assertEqual( act, exp );
+],
+];
 
-    def test_2(self):
-        data ='''(DELAYFILE (SDFVERSION "3.0") (DESIGN "BIGCHIP"))'''
-        sdf = parse(data);
-        sdfwrite.print_sdf( sdf, channel=self.buf );
-        act = self.buf.getvalue();
-        exp = '''(DELAYFILE
-  (SDFVERSION "3.0")
-  (DESIGN "BIGCHIP")
-)'''
-        self.assertEqual( act, exp );
+
+# Removes empty lines and trims leading and trailing whitespace from
+# a (generally multi-line) string.
+def trim_whitespace(string):
+    return "\n".join([l.strip() for l in string.splitlines() if l.strip()]);
+
+
+# Performs full SDF syntax tests by parsing an input syntax, writing it
+# out to a string buffer and comparing with the expected output.
+class TestParseAndWrite(unittest.TestCase):
+
+    def setUp(self):
+        reconfigure(errorlog=NullLogger);
+        self.buf = StringIO();
+
+    def test_testdata(self):
+        for data in testdata:
+            with self.subTest( data[0], data = data ):
+                exp = trim_whitespace( data[2] );
+                sdf = parse( data[1] );
+                self.buf.truncate(0);
+                self.buf.seek(0);
+                sdfwrite.print_sdf( sdf, channel=self.buf );
+                act = trim_whitespace( self.buf.getvalue() );
+                self.assertEqual( act, exp );
+
+
 
